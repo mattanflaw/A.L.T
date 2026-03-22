@@ -470,6 +470,124 @@ body::before {
   font-size:13px; color:var(--text);
 }
 
+/* ════════════════════════════════════════
+   DRAWER PARRAINAGE
+════════════════════════════════════════ */
+.drawer-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 300;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.drawer-overlay.show { opacity: 1; pointer-events: all; }
+
+.drawer {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%) translateY(100%);
+  width: 100%; max-width: 430px;
+  background: var(--surface);
+  border-top: 1px solid var(--border2);
+  border-radius: 20px 20px 0 0;
+  z-index: 301;
+  transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+  padding: 0 18px 32px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+.drawer.show { transform: translateX(-50%) translateY(0); }
+
+.drawer-handle {
+  width: 36px; height: 4px;
+  background: var(--border2);
+  border-radius: 4px;
+  margin: 12px auto 20px;
+}
+
+.drawer-title {
+  font-size: 11px; letter-spacing: 0.3em;
+  color: var(--muted); font-weight: 800;
+  margin-bottom: 18px;
+}
+
+.ref-link-box {
+  background: var(--obs-dim);
+  border: 1px solid rgba(139,109,255,0.2);
+  border-radius: 13px;
+  padding: 13px 14px;
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 12px;
+}
+.ref-link-text {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; color: var(--muted2);
+  flex: 1; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.ref-copy-btn {
+  background: var(--obs-dim);
+  border: 1px solid rgba(139,109,255,0.25);
+  border-radius: 8px; padding: 6px 12px;
+  font-size: 11px; color: var(--obs);
+  font-family: 'DM Mono', monospace;
+  font-weight: 500; flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.ref-stats-row {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 8px; margin-bottom: 12px;
+}
+.ref-stat {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 13px; padding: 13px;
+  text-align: center;
+}
+.ref-stat-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 20px; font-weight: 500;
+  color: var(--obs); display: block;
+}
+.ref-stat-key {
+  font-size: 9px; letter-spacing: 0.18em;
+  color: var(--muted); font-weight: 800;
+  margin-top: 3px; display: block;
+}
+
+.share-btn {
+  width: 100%;
+  background: linear-gradient(135deg, rgba(139,109,255,0.2), rgba(139,109,255,0.08));
+  border: 1px solid rgba(139,109,255,0.3);
+  border-radius: 13px; padding: 14px;
+  font-size: 13px; font-weight: 800;
+  color: var(--obs); letter-spacing: 0.1em;
+  margin-bottom: 18px;
+  transition: background 0.15s;
+}
+.share-btn:active { background: rgba(139,109,255,0.25); }
+
+.ref-top-title {
+  font-size: 10px; letter-spacing: 0.25em;
+  color: var(--muted); font-weight: 800;
+  margin-bottom: 10px;
+}
+.ref-top-list { display: flex; flex-direction: column; gap: 7px; }
+.ref-top-item {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 11px; padding: 10px 13px;
+}
+.ref-top-rank { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); width: 18px; }
+.ref-top-name { flex: 1; font-size: 13px; font-weight: 700; }
+.ref-top-count { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--obs); }
+
+/* Bouton parrainage dans le header */
+.ref-trigger {
+  position: absolute; right: 18px; top: 50%; transform: translateY(-50%);
+  display: none; /* caché, on utilise le header existant */
+}
+
 /* ── NAV ───────────────────────────────── */
 .nav {
   display:flex;
@@ -516,7 +634,38 @@ body::before {
     <span class="hdr-amount" id="hdr-bal">0</span>
     <span class="hdr-unit">OBS</span>
   </div>
+  <button onclick="openDrawer()" style="margin-left:10px;font-size:18px;color:var(--muted2);line-height:1;">👥</button>
 </header>
+
+<!-- Drawer parrainage -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-handle"></div>
+  <div class="drawer-title">PARRAINAGE</div>
+
+  <div class="ref-link-box">
+    <span class="ref-link-text" id="ref-link-text">Chargement...</span>
+    <button class="ref-copy-btn" onclick="copyRefLink()">COPIER</button>
+  </div>
+
+  <div class="ref-stats-row">
+    <div class="ref-stat">
+      <span class="ref-stat-val" id="ref-count">—</span>
+      <span class="ref-stat-key">FILLEULS</span>
+    </div>
+    <div class="ref-stat">
+      <span class="ref-stat-val" id="ref-earned">—</span>
+      <span class="ref-stat-key">OBS GAGNÉS</span>
+    </div>
+  </div>
+
+  <button class="share-btn" onclick="shareRefLink()">⬡ PARTAGER SUR TELEGRAM</button>
+
+  <div class="ref-top-title">TOP PARRAINS</div>
+  <div class="ref-top-list" id="ref-top-list">
+    <div class="lb-loading">Chargement...</div>
+  </div>
+</div>
 
 <!-- Pages -->
 <div class="pages">
@@ -632,7 +781,7 @@ body::before {
 // ═══════════════════════════════════════════
 //  CONFIG — remplace par ton URL Cloudflare
 // ═══════════════════════════════════════════
-const API = "https://bcf503975ed001.lhr.life"; // ← mettre à jour à chaque redémarrage
+const API = "https://ton-tunnel.trycloudflare.com"; // ← mettre à jour à chaque redémarrage
 
 // ═══════════════════════════════════════════
 //  TELEGRAM INIT
@@ -975,6 +1124,81 @@ async function loadProfile() {
   } catch(e) {
     console.warn("Profil non chargé");
   }
+}
+
+// ═══════════════════════════════════════════
+//  DRAWER PARRAINAGE
+// ═══════════════════════════════════════════
+let refLink = "";
+let drawerLoaded = false;
+
+function openDrawer() {
+  document.getElementById("drawer-overlay").classList.add("show");
+  document.getElementById("drawer").classList.add("show");
+  if (!drawerLoaded) loadReferralStats();
+}
+
+function closeDrawer() {
+  document.getElementById("drawer-overlay").classList.remove("show");
+  document.getElementById("drawer").classList.remove("show");
+}
+
+async function loadReferralStats() {
+  drawerLoaded = true;
+
+  // Construire le lien de parrainage
+  const botUsername = "@FLAW_PORTOR"; // ← remplace par ton @username du bot
+  refLink = `https://t.me/${botUsername}?start=ref_${TG_USER.id}`;
+  document.getElementById("ref-link-text").textContent = refLink;
+
+  try {
+    const res = await apiFetch("/referral/stats/" + TG_USER.id);
+    if (res.ok) {
+      document.getElementById("ref-count").textContent  = res.count;
+      document.getElementById("ref-earned").textContent = fmt(res.obs_earned);
+
+      const medals = ["🥇","🥈","🥉","4.","5."];
+      const list = document.getElementById("ref-top-list");
+
+      if (!res.top_referrers.length) {
+        list.innerHTML = '<div class="lb-loading">Aucun parrain pour l\'instant.</div>';
+        return;
+      }
+
+      list.innerHTML = res.top_referrers.map((r, i) => `
+        <div class="ref-top-item">
+          <span class="ref-top-rank">${medals[i]}</span>
+          <span class="ref-top-name">${r.username}</span>
+          <span class="ref-top-count">${r.total} filleul${r.total > 1 ? "s" : ""}</span>
+        </div>`).join("");
+    }
+  } catch(e) {
+    document.getElementById("ref-count").textContent  = "—";
+    document.getElementById("ref-earned").textContent = "—";
+  }
+}
+
+function copyRefLink() {
+  if (!refLink) return;
+  navigator.clipboard?.writeText(refLink).then(() => {
+    toast("✓ Lien copié !", "ok");
+  }).catch(() => {
+    // Fallback pour Telegram WebApp
+    const el = document.createElement("textarea");
+    el.value = refLink;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand("copy");
+    el.remove();
+    toast("✓ Lien copié !", "ok");
+  });
+}
+
+function shareRefLink() {
+  if (!refLink) return;
+  const msg = encodeURIComponent(`🎮 Rejoins-moi sur A.L.T et gagne 200 OBS de bonus !\n${refLink}`);
+  tg?.openTelegramLink?.(`https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${msg}`)
+    || window.open(`https://t.me/share/url?url=${encodeURIComponent(refLink)}`, "_blank");
 }
 
 // ═══════════════════════════════════════════
