@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>A.L.T</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+/* ── Variables ─────────────────────────── */
+:root {
+  --bg:           #09090e;
+  --surface:      #0f0f18;
+  --surface2:     #141420;
+  --border:       #1c1c2e;
+  --border2:      #252538;
+  --obs:          #8b6dff;
+  --obs-glow:     rgba(139,109,255,0.35);
+  --obs-dim:      rgba(139,109,255,0.08);
+  --obs-mid:      rgba(139,109,255,0.18);
+  --gold:         #e8c87a;
+  --gold-dim:     rgba(232,200,122,0.1);
+  --gold-border:  rgba(232,200,122,0.25);
+  --combo:        #ff6b8a;
+  --combo-glow:   rgba(255,107,138,0.4);
+  --text:         #eeeef8;
+  --muted:        #4a4a6a;
+  --muted2:       #6a6a8a;
+  --success:      #4ade80;
+  --error:        #f87171;
+  --tg-bg:        var(--bg);
+}
+
+/* ── Reset ─────────────────────────────── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; overflow:hidden; }
+button { font-family: inherit; cursor:pointer; border:none; background:none; }
+* { -webkit-tap-highlight-color: transparent; user-select:none; }
+
+/* ── Body ──────────────────────────────── */
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  display: flex;
+  flex-direction: column;
+  max-width: 430px;
+  margin: 0 auto;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Grain overlay */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none; z-index:1000; opacity:0.4;
+}
+
+/* ── Loading screen ────────────────────── */
+#loading {
+  position:fixed; inset:0;
+  background: var(--bg);
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:16px; z-index:999;
+  transition: opacity 0.4s ease;
+}
+#loading.hidden { opacity:0; pointer-events:none; }
+
+.loading-logo {
+  font-size:48px;
+  animation: loadPulse 1.2s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px var(--obs));
+}
+@keyframes loadPulse {
+  0%,100% { transform:scale(1); opacity:1; }
+  50%      { transform:scale(0.88); opacity:0.6; }
+}
+.loading-text {
+  font-size:11px; letter-spacing:0.4em;
+  color:var(--muted); font-weight:800;
+}
+
+/* ── Header ────────────────────────────── */
+.header {
+  display:flex; align-items:center;
+  justify-content:space-between;
+  padding:14px 18px 10px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+  position:relative;
+}
+
+.logo {
+  font-size:14px; font-weight:800;
+  letter-spacing:0.35em; color:var(--muted2);
+}
+.logo b { color:var(--obs); font-weight:800; }
+
+.hdr-balance {
+  display:flex; align-items:center; gap:7px;
+  background:var(--obs-dim);
+  border:1px solid rgba(139,109,255,0.18);
+  border-radius:100px;
+  padding:5px 13px;
+}
+.hdr-dot {
+  width:6px; height:6px; border-radius:50%;
+  background:var(--obs);
+  box-shadow:0 0 8px var(--obs);
+  animation:hdrdot 2.4s ease-in-out infinite;
+}
+@keyframes hdrdot {
+  0%,100%{ opacity:1; transform:scale(1); }
+  50%    { opacity:0.4; transform:scale(0.7); }
+}
+.hdr-amount {
+  font-family:'DM Mono',monospace;
+  font-size:13px; font-weight:500;
+  color:var(--obs); letter-spacing:0.04em;
+}
+.hdr-unit {
+  font-family:'DM Mono',monospace;
+  font-size:10px; color:var(--muted);
+}
+
+/* ── Toast ─────────────────────────────── */
+#toast {
+  position:fixed; top:70px; left:50%; transform:translateX(-50%);
+  background:var(--surface2);
+  border:1px solid var(--border2);
+  border-radius:100px;
+  padding:8px 18px;
+  font-size:12px; font-weight:700; letter-spacing:0.1em;
+  white-space:nowrap;
+  opacity:0; pointer-events:none;
+  transition:opacity 0.25s ease;
+  z-index:200;
+}
+#toast.show { opacity:1; }
+#toast.ok   { border-color:rgba(74,222,128,0.4); color:var(--success); }
+#toast.err  { border-color:rgba(248,113,113,0.4); color:var(--error); }
+
+/* ── Pages ─────────────────────────────── */
+.pages { flex:1; position:relative; overflow:hidden; }
+
+.page {
+  position:absolute; inset:0;
+  opacity:0; pointer-events:none;
+  transition:opacity 0.18s ease;
+  overflow-y:auto; overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  padding-bottom:16px;
+}
+.page.active { opacity:1; pointer-events:all; }
+
+/* ════════════════════════════════════════
+   PAGE HOME
+════════════════════════════════════════ */
+#page-home {
+  display:flex; flex-direction:column;
+  align-items:center; padding:16px 18px;
+  gap:20px;
+}
+
+/* Combo bar */
+.combo-row {
+  width:100%; display:flex;
+  align-items:center; gap:10px;
+}
+.combo-label {
+  font-size:10px; letter-spacing:0.25em;
+  color:var(--muted); font-weight:800;
+  flex-shrink:0;
+}
+.combo-track {
+  flex:1; height:2px;
+  background:var(--border2); border-radius:2px; overflow:hidden;
+}
+.combo-fill {
+  height:100%; background:var(--combo);
+  border-radius:2px; width:10%;
+  box-shadow:0 0 8px var(--combo-glow);
+  transition:width 0.25s ease;
+}
+.combo-mult {
+  font-family:'DM Mono',monospace;
+  font-size:20px; font-weight:500;
+  color:var(--combo);
+  text-shadow:0 0 16px var(--combo-glow);
+  min-width:36px; text-align:right;
+  transition:all 0.1s ease;
+  flex-shrink:0;
+}
+.combo-mult.bump {
+  transform:scale(1.3);
+  text-shadow:0 0 30px var(--combo-glow);
+}
+
+/* Tap zone */
+.tap-zone {
+  position:relative;
+  display:flex; align-items:center; justify-content:center;
+  width:220px; height:220px;
+}
+
+.ring {
+  position:absolute; border-radius:50%;
+  border:1px solid var(--border);
+}
+.ring-1 { width:220px; height:220px; }
+.ring-2 { width:178px; height:178px; }
+
+/* Orbiting dot */
+.orbit-dot {
+  position:absolute;
+  width:220px; height:220px;
+  animation:orbit 6s linear infinite;
+  pointer-events:none;
+}
+.orbit-dot::after {
+  content:'';
+  position:absolute;
+  top:0; left:50%; transform:translate(-50%,-50%);
+  width:5px; height:5px; border-radius:50%;
+  background:var(--obs);
+  box-shadow:0 0 10px var(--obs);
+}
+@keyframes orbit {
+  from { transform:rotate(0deg); }
+  to   { transform:rotate(360deg); }
+}
+
+.tap-btn {
+  width:138px; height:138px; border-radius:50%;
+  background:radial-gradient(circle at 38% 32%, #1a1230, #0c0918);
+  box-shadow:
+    0 0 0 1px rgba(139,109,255,0.25),
+    0 0 40px rgba(139,109,255,0.1),
+    inset 0 1px 0 rgba(255,255,255,0.04);
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:4px;
+  transition:transform 0.07s ease, box-shadow 0.07s ease;
+  position:relative; overflow:hidden; z-index:1;
+}
+.tap-btn::after {
+  content:'';
+  position:absolute; inset:0; border-radius:50%;
+  background:radial-gradient(circle at 50% 10%, rgba(139,109,255,0.18), transparent 55%);
+}
+.tap-btn:active, .tap-btn.pressed {
+  transform:scale(0.91);
+  box-shadow:
+    0 0 0 1px rgba(139,109,255,0.5),
+    0 0 60px rgba(139,109,255,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.tap-icon { font-size:38px; filter:drop-shadow(0 0 14px var(--obs)); z-index:1; }
+.tap-lbl  { font-size:9px; letter-spacing:0.3em; color:var(--muted); font-weight:800; z-index:1; }
+
+/* Float animations */
+.float {
+  position:absolute;
+  font-family:'DM Mono',monospace;
+  font-size:16px; font-weight:500;
+  color:var(--obs);
+  text-shadow:0 0 10px var(--obs);
+  pointer-events:none;
+  animation:floatUp 0.75s ease-out forwards;
+  z-index:50;
+}
+@keyframes floatUp {
+  0%   { opacity:1; transform:translateY(0) scale(1); }
+  100% { opacity:0; transform:translateY(-55px) scale(0.75); }
+}
+
+/* Stats cards */
+.stats-row {
+  width:100%; display:grid;
+  grid-template-columns:repeat(3,1fr); gap:8px;
+}
+.stat-card {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px; padding:12px 8px;
+  text-align:center;
+}
+.stat-val {
+  font-family:'DM Mono',monospace;
+  font-size:16px; font-weight:500;
+  color:var(--text); display:block;
+}
+.stat-key {
+  font-size:8px; letter-spacing:0.18em;
+  color:var(--muted); font-weight:800;
+  margin-top:3px; display:block;
+}
+
+/* Energy bar */
+.energy-row {
+  width:100%; display:flex;
+  align-items:center; gap:10px;
+}
+.energy-label {
+  font-size:10px; letter-spacing:0.2em;
+  color:var(--muted); font-weight:800; flex-shrink:0;
+}
+.energy-track {
+  flex:1; height:4px;
+  background:var(--border2); border-radius:4px; overflow:hidden;
+}
+.energy-fill {
+  height:100%;
+  background:linear-gradient(90deg, var(--obs), #c084fc);
+  border-radius:4px;
+  box-shadow:0 0 6px var(--obs-glow);
+  transition:width 0.3s ease;
+}
+.energy-val {
+  font-family:'DM Mono',monospace;
+  font-size:11px; color:var(--muted2);
+  flex-shrink:0; min-width:52px; text-align:right;
+}
+
+/* ════════════════════════════════════════
+   PAGE LEADERBOARD
+════════════════════════════════════════ */
+#page-lb { padding:18px; }
+
+.page-hdr {
+  font-size:10px; letter-spacing:0.35em;
+  color:var(--muted); font-weight:800;
+  margin-bottom:14px;
+}
+
+.lb-list { display:flex; flex-direction:column; gap:7px; }
+
+.lb-item {
+  display:flex; align-items:center; gap:11px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:13px; padding:11px 14px;
+  transition:border-color 0.15s;
+}
+.lb-item.me {
+  border-color:rgba(139,109,255,0.35);
+  background:var(--obs-dim);
+}
+.lb-rank {
+  font-family:'DM Mono',monospace;
+  font-size:12px; color:var(--muted);
+  width:18px; text-align:center; flex-shrink:0;
+}
+.lb-rank.g { color:var(--gold); }
+.lb-rank.s { color:#c0c0d8; }
+.lb-rank.b { color:#cd8040; }
+
+.lb-avi {
+  width:30px; height:30px; border-radius:50%;
+  background:var(--obs-dim);
+  border:1px solid var(--border2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; flex-shrink:0;
+}
+.lb-name { flex:1; font-size:13px; font-weight:700; }
+.lb-you  { font-size:8px; color:var(--obs); letter-spacing:0.1em; margin-left:5px; }
+.lb-score {
+  font-family:'DM Mono',monospace;
+  font-size:12px; color:var(--obs);
+}
+
+.lb-loading {
+  text-align:center; padding:30px;
+  font-size:11px; color:var(--muted);
+  letter-spacing:0.2em;
+}
+
+/* ════════════════════════════════════════
+   PAGE SHOP
+════════════════════════════════════════ */
+#page-shop { padding:18px; }
+
+.shop-list { display:flex; flex-direction:column; gap:9px; margin-top:14px; }
+
+.shop-item {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px; padding:14px;
+  display:flex; align-items:center; gap:13px;
+}
+
+.shop-ico {
+  width:46px; height:46px; border-radius:13px;
+  background:var(--obs-dim);
+  border:1px solid rgba(139,109,255,0.18);
+  display:flex; align-items:center; justify-content:center;
+  font-size:21px; flex-shrink:0;
+}
+.shop-ico.gold-ico {
+  background:var(--gold-dim);
+  border-color:var(--gold-border);
+}
+
+.shop-info { flex:1; min-width:0; }
+.shop-name { font-size:13px; font-weight:800; }
+.shop-desc { font-size:11px; color:var(--muted2); margin-top:2px; line-height:1.4; }
+
+.buy-btn {
+  border-radius:10px; padding:7px 12px;
+  font-family:'DM Mono',monospace;
+  font-size:11px; font-weight:500;
+  letter-spacing:0.04em;
+  white-space:nowrap; flex-shrink:0;
+  transition:opacity 0.15s, transform 0.1s;
+}
+.buy-btn:active { transform:scale(0.94); }
+
+.buy-obs {
+  background:var(--obs-dim);
+  border:1px solid rgba(139,109,255,0.28);
+  color:var(--obs);
+}
+.buy-ton {
+  background:var(--gold-dim);
+  border:1px solid var(--gold-border);
+  color:var(--gold);
+}
+.buy-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+/* ════════════════════════════════════════
+   PAGE PROFIL
+════════════════════════════════════════ */
+#page-profile { padding:18px; }
+
+.profile-hero {
+  display:flex; flex-direction:column;
+  align-items:center; gap:9px;
+  padding:22px 0 20px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:18px;
+}
+.profile-avi {
+  width:66px; height:66px; border-radius:50%;
+  background:var(--obs-dim);
+  border:2px solid rgba(139,109,255,0.4);
+  display:flex; align-items:center; justify-content:center;
+  font-size:28px;
+  box-shadow:0 0 24px var(--obs-glow);
+}
+.profile-name { font-size:18px; font-weight:800; }
+.profile-sub  { font-size:10px; color:var(--muted); letter-spacing:0.18em; }
+
+.profile-stats { display:flex; flex-direction:column; gap:8px; }
+.pstat {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:12px 14px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:13px;
+}
+.pstat-label {
+  font-size:11px; color:var(--muted2);
+  letter-spacing:0.12em; font-weight:700;
+}
+.pstat-val {
+  font-family:'DM Mono',monospace;
+  font-size:13px; color:var(--text);
+}
+
+/* ── NAV ───────────────────────────────── */
+.nav {
+  display:flex;
+  border-top:1px solid var(--border);
+  background:var(--bg);
+  flex-shrink:0;
+}
+.nav-btn {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:4px; padding:10px 0 14px;
+  color:var(--muted); transition:color 0.15s;
+  position:relative;
+}
+.nav-btn.active { color:var(--obs); }
+.nav-btn.active::before {
+  content:'';
+  position:absolute; top:0; left:50%;
+  transform:translateX(-50%);
+  width:22px; height:2px;
+  background:var(--obs); border-radius:0 0 2px 2px;
+  box-shadow:0 0 8px var(--obs);
+}
+.nav-ico  { font-size:19px; line-height:1; }
+.nav-lbl  { font-size:8px; letter-spacing:0.18em; font-weight:800; }
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loading">
+  <div class="loading-logo">◈</div>
+  <div class="loading-text">A · L · T</div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Header -->
+<header class="header">
+  <div class="logo">A<b>.</b>L<b>.</b>T</div>
+  <div class="hdr-balance">
+    <div class="hdr-dot"></div>
+    <span class="hdr-amount" id="hdr-bal">0</span>
+    <span class="hdr-unit">OBS</span>
+  </div>
+</header>
+
+<!-- Pages -->
+<div class="pages">
+
+  <!-- HOME -->
+  <div class="page active" id="page-home">
+
+    <div class="combo-row">
+      <span class="combo-label">COMBO</span>
+      <div class="combo-track"><div class="combo-fill" id="combo-fill"></div></div>
+      <span class="combo-mult" id="combo-txt">x1</span>
+    </div>
+
+    <div class="tap-zone" id="tap-zone">
+      <div class="ring ring-1"></div>
+      <div class="orbit-dot"></div>
+      <div class="ring ring-2"></div>
+      <button class="tap-btn" id="tap-btn">
+        <span class="tap-icon">◈</span>
+        <span class="tap-lbl">TAP</span>
+      </button>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <span class="stat-val" id="stat-per-tap">1</span>
+        <span class="stat-key">PAR TAP</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-val" id="stat-taps">0</span>
+        <span class="stat-key">TAPS</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-val" id="stat-rank">#—</span>
+        <span class="stat-key">RANG</span>
+      </div>
+    </div>
+
+    <div class="energy-row">
+      <span class="energy-label">ÉNERGIE</span>
+      <div class="energy-track"><div class="energy-fill" id="energy-fill" style="width:100%"></div></div>
+      <span class="energy-val" id="energy-val">500 / 500</span>
+    </div>
+
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div class="page" id="page-lb">
+    <div class="page-hdr">CLASSEMENT</div>
+    <div class="lb-list" id="lb-list">
+      <div class="lb-loading">CHARGEMENT…</div>
+    </div>
+  </div>
+
+  <!-- SHOP -->
+  <div class="page" id="page-shop">
+    <div class="page-hdr">SHOP</div>
+    <div class="shop-list" id="shop-list">
+      <!-- généré dynamiquement -->
+    </div>
+  </div>
+
+  <!-- PROFIL -->
+  <div class="page" id="page-profile">
+    <div class="profile-hero">
+      <div class="profile-avi">◈</div>
+      <div class="profile-name" id="prof-name">—</div>
+      <div class="profile-sub" id="prof-sub">RANG #— · MEMBRE</div>
+    </div>
+    <div class="profile-stats">
+      <div class="pstat">
+        <span class="pstat-label">OBSIDIUM TOTAL</span>
+        <span class="pstat-val" id="prof-obs">—</span>
+      </div>
+      <div class="pstat">
+        <span class="pstat-label">TAPS TOTAUX</span>
+        <span class="pstat-val" id="prof-taps">—</span>
+      </div>
+      <div class="pstat">
+        <span class="pstat-label">COMBO MAX</span>
+        <span class="pstat-val" id="prof-combo">—</span>
+      </div>
+      <div class="pstat">
+        <span class="pstat-label">MEMBRE DEPUIS</span>
+        <span class="pstat-val" id="prof-since">—</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Nav -->
+<nav class="nav">
+  <button class="nav-btn active" data-page="home">
+    <span class="nav-ico">◈</span>
+    <span class="nav-lbl">PLAY</span>
+  </button>
+  <button class="nav-btn" data-page="lb">
+    <span class="nav-ico">⬡</span>
+    <span class="nav-lbl">TOP</span>
+  </button>
+  <button class="nav-btn" data-page="shop">
+    <span class="nav-ico">⬟</span>
+    <span class="nav-lbl">SHOP</span>
+  </button>
+  <button class="nav-btn" data-page="profile">
+    <span class="nav-ico">○</span>
+    <span class="nav-lbl">PROFIL</span>
+  </button>
+</nav>
+
+<script>
+// ═══════════════════════════════════════════
+//  CONFIG — remplace par ton URL Cloudflare
+// ═══════════════════════════════════════════
+const API = "https://bcf503975ed001.lhr.life"; // ← mettre à jour à chaque redémarrage
+
+// ═══════════════════════════════════════════
+//  TELEGRAM INIT
+// ═══════════════════════════════════════════
+const tg = window.Telegram?.WebApp;
+if (tg) {
+  tg.ready();
+  tg.expand();
+  tg.setHeaderColor("#09090e");
+  tg.setBackgroundColor("#09090e");
+}
+
+const TG_USER = tg?.initDataUnsafe?.user || { id: 0, first_name: "Joueur", username: "joueur" };
+
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+let state = {
+  balance:    0,
+  taps:       0,
+  combo:      1,
+  comboMax:   1,
+  rank:       "—",
+  energy:     500,
+  maxEnergy:  500,
+  perTap:     1,
+  username:   TG_USER.first_name || "Joueur",
+  since:      "—",
+  // file d'attente des taps à envoyer
+  pendingTaps: 0,
+  pendingObs:  0,
+  syncTimer:   null,
+  comboTimer:  null,
+};
+
+// ═══════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════
+const fmt = n => n.toLocaleString('fr-FR');
+
+function toast(msg, type = "ok") {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = `show ${type}`;
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.className = "", 2200);
+}
+
+function apiFetch(path, opts = {}) {
+  return fetch(API + path, {
+    headers: { "Content-Type": "application/json" },
+    ...opts
+  }).then(r => r.json());
+}
+
+// ═══════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════
+document.querySelectorAll(".nav-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const page = btn.dataset.page;
+    document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("page-" + page).classList.add("active");
+
+    if (page === "lb")      loadLeaderboard();
+    if (page === "shop")    loadShop();
+    if (page === "profile") loadProfile();
+  });
+});
+
+// ═══════════════════════════════════════════
+//  RENDER UI
+// ═══════════════════════════════════════════
+function renderHome() {
+  document.getElementById("hdr-bal").textContent   = fmt(state.balance);
+  document.getElementById("combo-txt").textContent = "x" + state.combo;
+  document.getElementById("combo-fill").style.width = Math.min(state.combo * 10, 100) + "%";
+  document.getElementById("stat-per-tap").textContent = "+" + (state.perTap * state.combo);
+  document.getElementById("stat-taps").textContent    = fmt(state.taps);
+  document.getElementById("stat-rank").textContent    = "#" + state.rank;
+
+  const ePct = (state.energy / state.maxEnergy * 100).toFixed(0);
+  document.getElementById("energy-fill").style.width = ePct + "%";
+  document.getElementById("energy-val").textContent  = state.energy + " / " + state.maxEnergy;
+}
+
+// ═══════════════════════════════════════════
+//  INIT — register + load user
+// ═══════════════════════════════════════════
+async function init() {
+  try {
+    // Inscription (ignore si déjà existant)
+    await apiFetch("/register", {
+      method: "POST",
+      body: JSON.stringify({
+        telegram_id: TG_USER.id,
+        username: TG_USER.username || TG_USER.first_name
+      })
+    });
+
+    // Charger le profil
+    const data = await apiFetch("/user/" + TG_USER.id);
+    state.balance  = data.obsidium;
+    state.taps     = data.total_taps;
+    state.comboMax = data.combo_max;
+    state.rank     = data.rank;
+    state.username = data.username;
+    state.since    = data.created_at
+      ? new Date(data.created_at).toLocaleDateString('fr-FR', { month:'short', year:'numeric' })
+      : "—";
+
+    renderHome();
+  } catch(e) {
+    console.warn("API non disponible, mode hors-ligne");
+  }
+
+  // Masquer le loading
+  const loading = document.getElementById("loading");
+  loading.classList.add("hidden");
+  setTimeout(() => loading.remove(), 500);
+}
+
+// ═══════════════════════════════════════════
+//  TAP LOGIC
+// ═══════════════════════════════════════════
+const tapBtn  = document.getElementById("tap-btn");
+const tapZone = document.getElementById("tap-zone");
+const comboEl = document.getElementById("combo-txt");
+
+tapBtn.addEventListener("click", handleTap);
+tapBtn.addEventListener("touchstart", e => { e.preventDefault(); handleTap(e.touches[0]); }, { passive: false });
+
+function handleTap(e) {
+  if (state.energy <= 0) {
+    toast("⚡ Énergie épuisée !", "err");
+    return;
+  }
+
+  // Mettre à jour le state local
+  const earned = state.perTap * state.combo;
+  state.balance += earned;
+  state.taps    += 1;
+  state.energy  = Math.max(0, state.energy - 1);
+  state.combo   = Math.min(state.combo + 1, 10);
+  state.comboMax = Math.max(state.comboMax, state.combo);
+
+  // File d'attente pour sync API (par batch)
+  state.pendingTaps += 1;
+  state.pendingObs  += earned;
+  scheduleSyncTaps();
+
+  // Reset combo timer
+  clearTimeout(state.comboTimer);
+  state.comboTimer = setTimeout(() => {
+    state.combo = 1;
+    renderHome();
+  }, 2000);
+
+  // Animation combo bump
+  comboEl.classList.add("bump");
+  setTimeout(() => comboEl.classList.remove("bump"), 120);
+
+  // Float +N
+  spawnFloat(e, "+" + earned);
+
+  // Vibration légère
+  if (navigator.vibrate) navigator.vibrate(8);
+
+  renderHome();
+}
+
+function spawnFloat(e, text) {
+  const el = document.createElement("div");
+  el.className = "float";
+  el.textContent = text;
+  const rect = tapZone.getBoundingClientRect();
+  const clientX = e.clientX ?? e.touches?.[0]?.clientX ?? rect.left + rect.width/2;
+  const clientY = e.clientY ?? e.touches?.[0]?.clientY ?? rect.top  + rect.height/2;
+  el.style.left = (clientX - rect.left - 16 + (Math.random()*30-15)) + "px";
+  el.style.top  = (clientY - rect.top  - 16) + "px";
+  tapZone.appendChild(el);
+  el.addEventListener("animationend", () => el.remove());
+}
+
+// Sync taps vers API par batch (toutes les 800ms)
+function scheduleSyncTaps() {
+  if (state.syncTimer) return;
+  state.syncTimer = setTimeout(syncTaps, 800);
+}
+
+async function syncTaps() {
+  if (state.pendingTaps === 0) { state.syncTimer = null; return; }
+
+  const taps  = state.pendingTaps;
+  const combo = state.combo;
+  state.pendingTaps = 0;
+  state.pendingObs  = 0;
+  state.syncTimer   = null;
+
+  try {
+    const res = await apiFetch("/tap", {
+      method: "POST",
+      body: JSON.stringify({ telegram_id: TG_USER.id, taps, combo })
+    });
+    if (res.ok) {
+      // Sync le vrai solde serveur
+      state.balance = res.balance;
+      state.rank    = res.rank || state.rank;
+      renderHome();
+    }
+  } catch(e) {
+    console.warn("Sync tap échouée (mode hors-ligne)");
+  }
+}
+
+// Régénération énergie : +1 toutes les 2s
+setInterval(() => {
+  if (state.energy < state.maxEnergy) {
+    state.energy = Math.min(state.energy + 1, state.maxEnergy);
+    if (document.getElementById("page-home").classList.contains("active")) {
+      document.getElementById("energy-fill").style.width = (state.energy / state.maxEnergy * 100) + "%";
+      document.getElementById("energy-val").textContent  = state.energy + " / " + state.maxEnergy;
+    }
+  }
+}, 2000);
+
+// ═══════════════════════════════════════════
+//  LEADERBOARD
+// ═══════════════════════════════════════════
+async function loadLeaderboard() {
+  const list = document.getElementById("lb-list");
+  list.innerHTML = '<div class="lb-loading">CHARGEMENT…</div>';
+
+  try {
+    const res = await apiFetch("/leaderboard");
+    if (!res.ok || !res.leaders.length) {
+      list.innerHTML = '<div class="lb-loading">Aucun joueur.</div>';
+      return;
+    }
+
+    const medals = { 0: ["g","👑"], 1: ["s","⬡"], 2: ["b","⬟"] };
+    const myId = TG_USER.id;
+
+    list.innerHTML = res.leaders.map((p, i) => {
+      const [cls, ico] = medals[i] || ["", i+1];
+      const isMe = p.telegram_id === myId;
+      return `
+        <div class="lb-item${isMe ? " me" : ""}">
+          <span class="lb-rank ${cls}">${typeof ico === "string" ? ico : i+1}</span>
+          <div class="lb-avi">${isMe ? "◈" : "○"}</div>
+          <span class="lb-name">${p.username}${isMe ? '<span class="lb-you">VOUS</span>' : ""}</span>
+          <span class="lb-score">${fmt(p.obsidium)} OBS</span>
+        </div>`;
+    }).join("");
+
+  } catch(e) {
+    list.innerHTML = '<div class="lb-loading">Erreur de connexion.</div>';
+  }
+}
+
+// ═══════════════════════════════════════════
+//  SHOP
+// ═══════════════════════════════════════════
+async function loadShop() {
+  const list = document.getElementById("shop-list");
+  if (list.children.length > 0) return; // déjà chargé
+
+  try {
+    const res = await apiFetch("/shop");
+    if (!res.ok) return;
+
+    const icons  = { boost_x2:"⚡", combo_shield:"🔮", add_10000_obs:"💎", multiplier_x5:"🌑" };
+    const isTon  = item => item.price_ton !== null;
+
+    list.innerHTML = res.items.map(item => `
+      <div class="shop-item">
+        <div class="shop-ico${isTon(item) ? " gold-ico" : ""}">${icons[item.effect] || "◈"}</div>
+        <div class="shop-info">
+          <div class="shop-name">${item.name}</div>
+          <div class="shop-desc">${item.description}</div>
+        </div>
+        ${isTon(item)
+          ? `<button class="buy-btn buy-ton" onclick="buyTon(${item.id}, ${item.price_ton})">${(item.price_ton/1e9).toFixed(1)} TON</button>`
+          : `<button class="buy-btn buy-obs" onclick="buyObs(${item.id}, ${item.price_obs})">${fmt(item.price_obs)} OBS</button>`
+        }
+      </div>`).join("");
+
+  } catch(e) {
+    list.innerHTML = '<div class="lb-loading">Erreur de connexion.</div>';
+  }
+}
+
+async function buyObs(itemId, price) {
+  if (state.balance < price) {
+    toast("❌ Solde OBS insuffisant", "err");
+    return;
+  }
+  try {
+    const res = await apiFetch("/buy", {
+      method: "POST",
+      body: JSON.stringify({ telegram_id: TG_USER.id, item_id: itemId })
+    });
+    if (res.ok) {
+      state.balance = res.balance;
+      renderHome();
+      document.getElementById("hdr-bal").textContent = fmt(state.balance);
+      toast("✓ Boost activé : " + res.item, "ok");
+    } else {
+      toast("❌ " + (res.detail || "Erreur"), "err");
+    }
+  } catch(e) {
+    toast("❌ Erreur de connexion", "err");
+  }
+}
+
+async function buyTon(itemId, amountNano) {
+  // Générer le lien de paiement TON via l'API
+  const link = `${API}/ton/link?amount=${amountNano}&user=${TG_USER.id}`;
+  // Ouvrir le wallet TON dans Telegram
+  tg?.openLink?.(link) || window.open(link, "_blank");
+  toast("💎 Ouverture du wallet TON…", "ok");
+}
+
+// ═══════════════════════════════════════════
+//  PROFIL
+// ═══════════════════════════════════════════
+async function loadProfile() {
+  try {
+    const data = await apiFetch("/user/" + TG_USER.id);
+    document.getElementById("prof-name").textContent  = data.username;
+    document.getElementById("prof-sub").textContent   = `RANG #${data.rank} · MEMBRE`;
+    document.getElementById("prof-obs").textContent   = fmt(data.obsidium) + " OBS";
+    document.getElementById("prof-taps").textContent  = fmt(data.total_taps);
+    document.getElementById("prof-combo").textContent = "x" + data.combo_max;
+    document.getElementById("prof-since").textContent = data.created_at
+      ? new Date(data.created_at).toLocaleDateString('fr-FR', { month:'long', year:'numeric' })
+      : "—";
+  } catch(e) {
+    console.warn("Profil non chargé");
+  }
+}
+
+// ═══════════════════════════════════════════
+//  START
+// ═══════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
