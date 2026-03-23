@@ -7,146 +7,99 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
-/* ── Variables ─────────────────────────── */
 :root {
-  --bg:           #09090e;
-  --surface:      #0f0f18;
-  --surface2:     #141420;
-  --border:       #1c1c2e;
-  --border2:      #252538;
-  --obs:          #8b6dff;
-  --obs-glow:     rgba(139,109,255,0.35);
-  --obs-dim:      rgba(139,109,255,0.08);
-  --obs-mid:      rgba(139,109,255,0.18);
-  --gold:         #e8c87a;
-  --gold-dim:     rgba(232,200,122,0.1);
-  --gold-border:  rgba(232,200,122,0.25);
-  --combo:        #ff6b8a;
-  --combo-glow:   rgba(255,107,138,0.4);
-  --text:         #eeeef8;
-  --muted:        #4a4a6a;
-  --muted2:       #6a6a8a;
-  --success:      #4ade80;
-  --error:        #f87171;
-  --tg-bg:        var(--bg);
+  --bg:          #09090e;
+  --surface:     #0f0f18;
+  --surface2:    #141420;
+  --border:      #1c1c2e;
+  --border2:     #252538;
+  --obs:         #8b6dff;
+  --obs-glow:    rgba(139,109,255,0.35);
+  --obs-dim:     rgba(139,109,255,0.08);
+  --gold:        #e8c87a;
+  --gold-dim:    rgba(232,200,122,0.1);
+  --gold-border: rgba(232,200,122,0.25);
+  --combo:       #ff6b8a;
+  --combo-glow:  rgba(255,107,138,0.4);
+  --green:       #4ade80;
+  --green-dim:   rgba(74,222,128,0.1);
+  --green-border:rgba(74,222,128,0.25);
+  --text:        #eeeef8;
+  --muted:       #4a4a6a;
+  --muted2:      #6a6a8a;
+  --success:     #4ade80;
+  --error:       #f87171;
 }
 
-/* ── Reset ─────────────────────────────── */
-*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-html, body { height:100%; overflow:hidden; }
-button { font-family: inherit; cursor:pointer; border:none; background:none; }
-* { -webkit-tap-highlight-color: transparent; user-select:none; }
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
+html,body { height:100%; overflow:hidden; }
+button { font-family:inherit; cursor:pointer; border:none; background:none; }
+* { -webkit-tap-highlight-color:transparent; user-select:none; }
 
-/* ── Body ──────────────────────────────── */
 body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Syne', sans-serif;
-  display: flex;
-  flex-direction: column;
-  max-width: 430px;
-  margin: 0 auto;
-  height: 100vh;
-  position: relative;
-  overflow: hidden;
-}
-
-/* Grain overlay */
-body::before {
-  content:'';
-  position:fixed; inset:0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-  pointer-events:none; z-index:1000; opacity:0.4;
-}
-
-/* ── Loading screen ────────────────────── */
-#loading {
-  position:fixed; inset:0;
-  background: var(--bg);
+  background:var(--bg); color:var(--text);
+  font-family:'Syne',sans-serif;
   display:flex; flex-direction:column;
-  align-items:center; justify-content:center;
-  gap:16px; z-index:999;
-  transition: opacity 0.4s ease;
+  max-width:430px; margin:0 auto;
+  height:100vh; overflow:hidden;
+}
+
+/* Grain */
+body::before {
+  content:''; position:fixed; inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none; z-index:1000; opacity:0.35;
+}
+
+/* ── Loading ── */
+#loading {
+  position:fixed; inset:0; background:var(--bg);
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:16px; z-index:999;
+  transition:opacity 0.4s ease;
 }
 #loading.hidden { opacity:0; pointer-events:none; }
+.loading-logo { font-size:48px; animation:lpulse 1.2s ease-in-out infinite; filter:drop-shadow(0 0 20px var(--obs)); }
+.loading-text { font-size:11px; letter-spacing:0.4em; color:var(--muted); font-weight:800; }
+@keyframes lpulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(0.88);opacity:0.6} }
 
-.loading-logo {
-  font-size:48px;
-  animation: loadPulse 1.2s ease-in-out infinite;
-  filter: drop-shadow(0 0 20px var(--obs));
+/* ── Toast ── */
+#toast {
+  position:fixed; top:68px; left:50%; transform:translateX(-50%);
+  background:var(--surface2); border:1px solid var(--border2);
+  border-radius:100px; padding:8px 18px;
+  font-size:12px; font-weight:700; letter-spacing:0.1em;
+  white-space:nowrap; opacity:0; pointer-events:none;
+  transition:opacity 0.2s ease; z-index:200;
 }
-@keyframes loadPulse {
-  0%,100% { transform:scale(1); opacity:1; }
-  50%      { transform:scale(0.88); opacity:0.6; }
-}
-.loading-text {
-  font-size:11px; letter-spacing:0.4em;
-  color:var(--muted); font-weight:800;
-}
+#toast.show { opacity:1; }
+#toast.ok  { border-color:rgba(74,222,128,0.4); color:var(--success); }
+#toast.err { border-color:rgba(248,113,113,0.4); color:#f87171; }
 
-/* ── Header ────────────────────────────── */
+/* ── Header ── */
 .header {
-  display:flex; align-items:center;
-  justify-content:space-between;
-  padding:14px 18px 10px;
-  border-bottom:1px solid var(--border);
-  flex-shrink:0;
-  position:relative;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:13px 18px 10px;
+  border-bottom:1px solid var(--border); flex-shrink:0;
 }
-
-.logo {
-  font-size:14px; font-weight:800;
-  letter-spacing:0.35em; color:var(--muted2);
-}
-.logo b { color:var(--obs); font-weight:800; }
-
+.logo { font-size:14px; font-weight:800; letter-spacing:0.35em; color:var(--muted2); }
+.logo b { color:var(--obs); }
 .hdr-balance {
   display:flex; align-items:center; gap:7px;
-  background:var(--obs-dim);
-  border:1px solid rgba(139,109,255,0.18);
-  border-radius:100px;
-  padding:5px 13px;
+  background:var(--obs-dim); border:1px solid rgba(139,109,255,0.18);
+  border-radius:100px; padding:5px 13px;
 }
 .hdr-dot {
   width:6px; height:6px; border-radius:50%;
-  background:var(--obs);
-  box-shadow:0 0 8px var(--obs);
+  background:var(--obs); box-shadow:0 0 8px var(--obs);
   animation:hdrdot 2.4s ease-in-out infinite;
 }
-@keyframes hdrdot {
-  0%,100%{ opacity:1; transform:scale(1); }
-  50%    { opacity:0.4; transform:scale(0.7); }
-}
-.hdr-amount {
-  font-family:'DM Mono',monospace;
-  font-size:13px; font-weight:500;
-  color:var(--obs); letter-spacing:0.04em;
-}
-.hdr-unit {
-  font-family:'DM Mono',monospace;
-  font-size:10px; color:var(--muted);
-}
+@keyframes hdrdot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
+.hdr-amount { font-family:'DM Mono',monospace; font-size:13px; font-weight:500; color:var(--obs); }
+.hdr-unit   { font-family:'DM Mono',monospace; font-size:10px; color:var(--muted); }
 
-/* ── Toast ─────────────────────────────── */
-#toast {
-  position:fixed; top:70px; left:50%; transform:translateX(-50%);
-  background:var(--surface2);
-  border:1px solid var(--border2);
-  border-radius:100px;
-  padding:8px 18px;
-  font-size:12px; font-weight:700; letter-spacing:0.1em;
-  white-space:nowrap;
-  opacity:0; pointer-events:none;
-  transition:opacity 0.25s ease;
-  z-index:200;
-}
-#toast.show { opacity:1; }
-#toast.ok   { border-color:rgba(74,222,128,0.4); color:var(--success); }
-#toast.err  { border-color:rgba(248,113,113,0.4); color:var(--error); }
-
-/* ── Pages ─────────────────────────────── */
+/* ── Pages ── */
 .pages { flex:1; position:relative; overflow:hidden; }
-
 .page {
   position:absolute; inset:0;
   opacity:0; pointer-events:none;
@@ -157,476 +110,338 @@ body::before {
 }
 .page.active { opacity:1; pointer-events:all; }
 
-/* ════════════════════════════════════════
-   PAGE HOME
-════════════════════════════════════════ */
+/* ═══════ PAGE HOME ═══════ */
 #page-home {
   display:flex; flex-direction:column;
-  align-items:center; padding:16px 18px;
-  gap:20px;
+  align-items:center; padding:16px 18px; gap:18px;
 }
 
-/* Combo bar */
 .combo-row {
-  width:100%; display:flex;
-  align-items:center; gap:10px;
+  width:100%; display:flex; align-items:center; gap:10px;
 }
-.combo-label {
-  font-size:10px; letter-spacing:0.25em;
-  color:var(--muted); font-weight:800;
-  flex-shrink:0;
-}
-.combo-track {
-  flex:1; height:2px;
-  background:var(--border2); border-radius:2px; overflow:hidden;
-}
-.combo-fill {
-  height:100%; background:var(--combo);
-  border-radius:2px; width:10%;
-  box-shadow:0 0 8px var(--combo-glow);
-  transition:width 0.25s ease;
-}
-.combo-mult {
-  font-family:'DM Mono',monospace;
-  font-size:20px; font-weight:500;
-  color:var(--combo);
-  text-shadow:0 0 16px var(--combo-glow);
-  min-width:36px; text-align:right;
+.combo-label { font-size:10px; letter-spacing:0.25em; color:var(--muted); font-weight:800; flex-shrink:0; }
+.combo-track { flex:1; height:2px; background:var(--border2); border-radius:2px; overflow:hidden; }
+.combo-fill  { height:100%; background:var(--combo); border-radius:2px; width:10%; box-shadow:0 0 8px var(--combo-glow); transition:width 0.25s ease; }
+.combo-mult  {
+  font-family:'DM Mono',monospace; font-size:20px; font-weight:500;
+  color:var(--combo); text-shadow:0 0 16px var(--combo-glow);
+  min-width:36px; text-align:right; flex-shrink:0;
   transition:all 0.1s ease;
-  flex-shrink:0;
 }
-.combo-mult.bump {
-  transform:scale(1.3);
-  text-shadow:0 0 30px var(--combo-glow);
-}
+.combo-mult.bump { transform:scale(1.3); }
 
-/* Tap zone */
 .tap-zone {
-  position:relative;
-  display:flex; align-items:center; justify-content:center;
-  width:220px; height:220px;
+  position:relative; display:flex;
+  align-items:center; justify-content:center;
+  width:210px; height:210px;
 }
-
-.ring {
-  position:absolute; border-radius:50%;
-  border:1px solid var(--border);
-}
-.ring-1 { width:220px; height:220px; }
-.ring-2 { width:178px; height:178px; }
-
-/* Orbiting dot */
-.orbit-dot {
-  position:absolute;
-  width:220px; height:220px;
-  animation:orbit 6s linear infinite;
-  pointer-events:none;
-}
+.ring { position:absolute; border-radius:50%; border:1px solid var(--border); }
+.ring-1 { width:210px; height:210px; }
+.ring-2 { width:170px; height:170px; }
+.orbit-dot { position:absolute; width:210px; height:210px; animation:orbit 6s linear infinite; pointer-events:none; }
 .orbit-dot::after {
-  content:'';
-  position:absolute;
-  top:0; left:50%; transform:translate(-50%,-50%);
+  content:''; position:absolute; top:0; left:50%; transform:translate(-50%,-50%);
   width:5px; height:5px; border-radius:50%;
-  background:var(--obs);
-  box-shadow:0 0 10px var(--obs);
+  background:var(--obs); box-shadow:0 0 10px var(--obs);
 }
-@keyframes orbit {
-  from { transform:rotate(0deg); }
-  to   { transform:rotate(360deg); }
-}
+@keyframes orbit { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 
 .tap-btn {
-  width:138px; height:138px; border-radius:50%;
+  width:132px; height:132px; border-radius:50%;
   background:radial-gradient(circle at 38% 32%, #1a1230, #0c0918);
-  box-shadow:
-    0 0 0 1px rgba(139,109,255,0.25),
-    0 0 40px rgba(139,109,255,0.1),
-    inset 0 1px 0 rgba(255,255,255,0.04);
-  display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:4px;
+  box-shadow:0 0 0 1px rgba(139,109,255,0.25),0 0 40px rgba(139,109,255,0.1),inset 0 1px 0 rgba(255,255,255,0.04);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
   transition:transform 0.07s ease, box-shadow 0.07s ease;
   position:relative; overflow:hidden; z-index:1;
 }
 .tap-btn::after {
-  content:'';
-  position:absolute; inset:0; border-radius:50%;
+  content:''; position:absolute; inset:0; border-radius:50%;
   background:radial-gradient(circle at 50% 10%, rgba(139,109,255,0.18), transparent 55%);
 }
-.tap-btn:active, .tap-btn.pressed {
+.tap-btn:active {
   transform:scale(0.91);
-  box-shadow:
-    0 0 0 1px rgba(139,109,255,0.5),
-    0 0 60px rgba(139,109,255,0.3),
-    inset 0 1px 0 rgba(255,255,255,0.04);
+  box-shadow:0 0 0 1px rgba(139,109,255,0.5),0 0 60px rgba(139,109,255,0.3),inset 0 1px 0 rgba(255,255,255,0.04);
 }
-.tap-icon { font-size:38px; filter:drop-shadow(0 0 14px var(--obs)); z-index:1; }
+.tap-icon { font-size:36px; filter:drop-shadow(0 0 14px var(--obs)); z-index:1; }
 .tap-lbl  { font-size:9px; letter-spacing:0.3em; color:var(--muted); font-weight:800; z-index:1; }
 
-/* Float animations */
 .float {
-  position:absolute;
-  font-family:'DM Mono',monospace;
-  font-size:16px; font-weight:500;
-  color:var(--obs);
-  text-shadow:0 0 10px var(--obs);
-  pointer-events:none;
-  animation:floatUp 0.75s ease-out forwards;
-  z-index:50;
+  position:absolute; font-family:'DM Mono',monospace;
+  font-size:16px; font-weight:500; color:var(--obs);
+  text-shadow:0 0 10px var(--obs); pointer-events:none;
+  animation:floatUp 0.75s ease-out forwards; z-index:50;
 }
-@keyframes floatUp {
-  0%   { opacity:1; transform:translateY(0) scale(1); }
-  100% { opacity:0; transform:translateY(-55px) scale(0.75); }
+@keyframes floatUp { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-55px) scale(0.75)} }
+
+/* Auto-clicker indicator */
+.ac-indicator {
+  display:flex; align-items:center; gap:8px;
+  background:var(--green-dim); border:1px solid var(--green-border);
+  border-radius:100px; padding:6px 14px;
+  font-size:11px; font-weight:700; color:var(--green);
+  letter-spacing:0.1em;
+}
+.ac-dot { width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); animation:hdrdot 1.5s ease-in-out infinite; }
+.ac-indicator.hidden { display:none; }
+
+.stats-row { width:100%; display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.stat-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px 8px; text-align:center; }
+.stat-val  { font-family:'DM Mono',monospace; font-size:16px; font-weight:500; color:var(--text); display:block; }
+.stat-key  { font-size:8px; letter-spacing:0.18em; color:var(--muted); font-weight:800; margin-top:3px; display:block; }
+
+.energy-row { width:100%; display:flex; align-items:center; gap:10px; }
+.energy-label { font-size:10px; letter-spacing:0.2em; color:var(--muted); font-weight:800; flex-shrink:0; }
+.energy-track { flex:1; height:4px; background:var(--border2); border-radius:4px; overflow:hidden; }
+.energy-fill  { height:100%; background:linear-gradient(90deg,var(--obs),#c084fc); border-radius:4px; box-shadow:0 0 6px var(--obs-glow); transition:width 0.3s ease; }
+.energy-val   { font-family:'DM Mono',monospace; font-size:11px; color:var(--muted2); flex-shrink:0; min-width:52px; text-align:right; }
+
+/* ═══════ PAGE WALLET ═══════ */
+#page-wallet { padding:18px; }
+
+.wallet-resources {
+  display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;
+}
+.res-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:14px;
+}
+.res-card.full { grid-column:1/-1; }
+.res-icon  { font-size:20px; margin-bottom:6px; display:block; }
+.res-val   { font-family:'DM Mono',monospace; font-size:18px; font-weight:500; color:var(--text); display:block; }
+.res-label { font-size:9px; letter-spacing:0.2em; color:var(--muted); font-weight:800; margin-top:2px; display:block; }
+.res-sub   { font-family:'DM Mono',monospace; font-size:11px; color:var(--muted2); margin-top:4px; display:block; }
+
+/* Energy bar in wallet */
+.wallet-energy-bar { margin-top:8px; }
+.w-track { height:4px; background:var(--border2); border-radius:4px; overflow:hidden; margin-top:6px; }
+.w-fill  { height:100%; background:linear-gradient(90deg,var(--obs),#c084fc); border-radius:4px; transition:width 0.3s; }
+
+/* Auto-clicker card */
+.ac-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:16px; margin-bottom:14px;
+}
+.ac-card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.ac-card-title  { font-size:11px; letter-spacing:0.25em; color:var(--muted); font-weight:800; }
+.ac-status-badge {
+  font-size:10px; font-weight:700; letter-spacing:0.1em;
+  padding:4px 10px; border-radius:100px;
+}
+.ac-status-badge.active   { background:var(--green-dim); color:var(--green); border:1px solid var(--green-border); }
+.ac-status-badge.inactive { background:var(--obs-dim); color:var(--muted2); border:1px solid var(--border2); }
+
+.ac-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+.ac-stat  { text-align:center; }
+.ac-stat-val { font-family:'DM Mono',monospace; font-size:15px; color:var(--text); display:block; }
+.ac-stat-key { font-size:8px; letter-spacing:0.15em; color:var(--muted); font-weight:800; margin-top:2px; display:block; }
+
+.ac-progress-track { height:3px; background:var(--border2); border-radius:3px; overflow:hidden; margin-bottom:12px; }
+.ac-progress-fill  { height:100%; background:var(--green); border-radius:3px; box-shadow:0 0 6px rgba(74,222,128,0.4); transition:width 1s linear; }
+
+.ac-claim-btn {
+  width:100%; padding:12px;
+  background:var(--green-dim); border:1px solid var(--green-border);
+  border-radius:12px; font-size:13px; font-weight:800;
+  color:var(--green); letter-spacing:0.1em;
+  transition:background 0.15s;
+}
+.ac-claim-btn:active { background:rgba(74,222,128,0.2); }
+.ac-claim-btn:disabled { opacity:0.4; }
+.ac-inactive-msg { font-size:12px; color:var(--muted2); text-align:center; padding:4px 0; }
+
+/* Wallet actions */
+.wallet-section-title {
+  font-size:10px; letter-spacing:0.3em; color:var(--muted);
+  font-weight:800; margin-bottom:10px;
 }
 
-/* Stats cards */
-.stats-row {
-  width:100%; display:grid;
-  grid-template-columns:repeat(3,1fr); gap:8px;
+.wallet-actions { display:flex; gap:8px; margin-bottom:14px; }
+.wallet-action-btn {
+  flex:1; padding:14px 10px;
+  border-radius:14px; font-size:12px; font-weight:800;
+  letter-spacing:0.1em; text-align:center;
+  transition:background 0.15s, transform 0.1s;
 }
-.stat-card {
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:14px; padding:12px 8px;
-  text-align:center;
-}
-.stat-val {
-  font-family:'DM Mono',monospace;
-  font-size:16px; font-weight:500;
-  color:var(--text); display:block;
-}
-.stat-key {
-  font-size:8px; letter-spacing:0.18em;
-  color:var(--muted); font-weight:800;
-  margin-top:3px; display:block;
-}
+.wallet-action-btn:active { transform:scale(0.97); }
+.btn-deposit  { background:var(--obs-dim); border:1px solid rgba(139,109,255,0.3); color:var(--obs); }
+.btn-withdraw { background:var(--gold-dim); border:1px solid var(--gold-border); color:var(--gold); }
+.btn-transfer { background:var(--green-dim); border:1px solid var(--green-border); color:var(--green); }
 
-/* Energy bar */
-.energy-row {
-  width:100%; display:flex;
-  align-items:center; gap:10px;
+/* History */
+.history-list { display:flex; flex-direction:column; gap:7px; }
+.history-item {
+  display:flex; align-items:center; gap:10px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:12px; padding:10px 13px;
 }
-.energy-label {
-  font-size:10px; letter-spacing:0.2em;
-  color:var(--muted); font-weight:800; flex-shrink:0;
-}
-.energy-track {
-  flex:1; height:4px;
-  background:var(--border2); border-radius:4px; overflow:hidden;
-}
-.energy-fill {
-  height:100%;
-  background:linear-gradient(90deg, var(--obs), #c084fc);
-  border-radius:4px;
-  box-shadow:0 0 6px var(--obs-glow);
-  transition:width 0.3s ease;
-}
-.energy-val {
-  font-family:'DM Mono',monospace;
-  font-size:11px; color:var(--muted2);
-  flex-shrink:0; min-width:52px; text-align:right;
-}
+.history-ico  { font-size:16px; flex-shrink:0; }
+.history-info { flex:1; }
+.history-type { font-size:12px; font-weight:700; }
+.history-date { font-size:10px; color:var(--muted2); margin-top:1px; }
+.history-amount { font-family:'DM Mono',monospace; font-size:13px; }
+.history-amount.out { color:#f87171; }
+.history-amount.in  { color:var(--success); }
 
-/* ════════════════════════════════════════
-   PAGE LEADERBOARD
-════════════════════════════════════════ */
-#page-lb { padding:18px; }
-
-.page-hdr {
-  font-size:10px; letter-spacing:0.35em;
-  color:var(--muted); font-weight:800;
-  margin-bottom:14px;
-}
-
-.lb-list { display:flex; flex-direction:column; gap:7px; }
-
-.lb-item {
-  display:flex; align-items:center; gap:11px;
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:13px; padding:11px 14px;
-  transition:border-color 0.15s;
-}
-.lb-item.me {
-  border-color:rgba(139,109,255,0.35);
-  background:var(--obs-dim);
-}
-.lb-rank {
-  font-family:'DM Mono',monospace;
-  font-size:12px; color:var(--muted);
-  width:18px; text-align:center; flex-shrink:0;
-}
-.lb-rank.g { color:var(--gold); }
-.lb-rank.s { color:#c0c0d8; }
-.lb-rank.b { color:#cd8040; }
-
-.lb-avi {
-  width:30px; height:30px; border-radius:50%;
-  background:var(--obs-dim);
-  border:1px solid var(--border2);
-  display:flex; align-items:center; justify-content:center;
-  font-size:13px; flex-shrink:0;
-}
-.lb-name { flex:1; font-size:13px; font-weight:700; }
-.lb-you  { font-size:8px; color:var(--obs); letter-spacing:0.1em; margin-left:5px; }
-.lb-score {
-  font-family:'DM Mono',monospace;
-  font-size:12px; color:var(--obs);
-}
-
-.lb-loading {
-  text-align:center; padding:30px;
-  font-size:11px; color:var(--muted);
-  letter-spacing:0.2em;
-}
-
-/* ════════════════════════════════════════
-   PAGE SHOP
-════════════════════════════════════════ */
+/* ═══════ PAGE SHOP ═══════ */
 #page-shop { padding:18px; }
-
 .shop-list { display:flex; flex-direction:column; gap:9px; margin-top:14px; }
-
 .shop-item {
-  background:var(--surface);
-  border:1px solid var(--border);
+  background:var(--surface); border:1px solid var(--border);
   border-radius:14px; padding:14px;
   display:flex; align-items:center; gap:13px;
 }
-
 .shop-ico {
   width:46px; height:46px; border-radius:13px;
-  background:var(--obs-dim);
-  border:1px solid rgba(139,109,255,0.18);
+  background:var(--obs-dim); border:1px solid rgba(139,109,255,0.18);
   display:flex; align-items:center; justify-content:center;
   font-size:21px; flex-shrink:0;
 }
-.shop-ico.gold-ico {
-  background:var(--gold-dim);
-  border-color:var(--gold-border);
-}
-
+.shop-ico.gold-ico { background:var(--gold-dim); border-color:var(--gold-border); }
+.shop-ico.green-ico { background:var(--green-dim); border-color:var(--green-border); }
 .shop-info { flex:1; min-width:0; }
 .shop-name { font-size:13px; font-weight:800; }
 .shop-desc { font-size:11px; color:var(--muted2); margin-top:2px; line-height:1.4; }
-
+.shop-btns { display:flex; flex-direction:column; gap:5px; flex-shrink:0; }
 .buy-btn {
-  border-radius:10px; padding:7px 12px;
-  font-family:'DM Mono',monospace;
-  font-size:11px; font-weight:500;
-  letter-spacing:0.04em;
-  white-space:nowrap; flex-shrink:0;
+  border-radius:10px; padding:6px 11px;
+  font-family:'DM Mono',monospace; font-size:11px; font-weight:500;
+  letter-spacing:0.04em; white-space:nowrap;
   transition:opacity 0.15s, transform 0.1s;
 }
 .buy-btn:active { transform:scale(0.94); }
+.buy-obs   { background:var(--obs-dim); border:1px solid rgba(139,109,255,0.28); color:var(--obs); }
+.buy-ton   { background:var(--gold-dim); border:1px solid var(--gold-border); color:var(--gold); }
+.buy-stars { background:var(--green-dim); border:1px solid var(--green-border); color:var(--green); }
 
-.buy-obs {
-  background:var(--obs-dim);
-  border:1px solid rgba(139,109,255,0.28);
-  color:var(--obs);
-}
-.buy-ton {
-  background:var(--gold-dim);
-  border:1px solid var(--gold-border);
-  color:var(--gold);
-}
-.buy-btn:disabled { opacity:0.4; cursor:not-allowed; }
-
-/* ════════════════════════════════════════
-   PAGE PROFIL
-════════════════════════════════════════ */
+/* ═══════ PAGE PROFILE ═══════ */
 #page-profile { padding:18px; }
-
 .profile-hero {
-  display:flex; flex-direction:column;
-  align-items:center; gap:9px;
-  padding:22px 0 20px;
-  border-bottom:1px solid var(--border);
-  margin-bottom:18px;
+  display:flex; flex-direction:column; align-items:center; gap:9px;
+  padding:22px 0 20px; border-bottom:1px solid var(--border); margin-bottom:18px;
 }
 .profile-avi {
   width:66px; height:66px; border-radius:50%;
-  background:var(--obs-dim);
-  border:2px solid rgba(139,109,255,0.4);
-  display:flex; align-items:center; justify-content:center;
-  font-size:28px;
+  background:var(--obs-dim); border:2px solid rgba(139,109,255,0.4);
+  display:flex; align-items:center; justify-content:center; font-size:28px;
   box-shadow:0 0 24px var(--obs-glow);
+}
+.level-badge {
+  background:var(--obs-dim); border:1px solid rgba(139,109,255,0.3);
+  border-radius:100px; padding:4px 12px;
+  font-size:10px; font-weight:800; color:var(--obs); letter-spacing:0.2em;
 }
 .profile-name { font-size:18px; font-weight:800; }
 .profile-sub  { font-size:10px; color:var(--muted); letter-spacing:0.18em; }
-
 .profile-stats { display:flex; flex-direction:column; gap:8px; }
 .pstat {
   display:flex; justify-content:space-between; align-items:center;
-  padding:12px 14px;
+  padding:12px 14px; background:var(--surface);
+  border:1px solid var(--border); border-radius:13px;
+}
+.pstat-label { font-size:11px; color:var(--muted2); letter-spacing:0.12em; font-weight:700; }
+.pstat-val   { font-family:'DM Mono',monospace; font-size:13px; color:var(--text); }
+
+/* Auto-clicker card sur Play */
+.ac-play-card {
+  width:100%;
   background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:13px;
+  border:1px solid var(--green-border);
+  border-radius:14px;
+  padding:12px 14px;
 }
-.pstat-label {
-  font-size:11px; color:var(--muted2);
-  letter-spacing:0.12em; font-weight:700;
+.ac-play-card.hidden { display:none; }
+.ac-play-header {
+  display:flex; align-items:center;
+  justify-content:space-between; margin-bottom:10px;
 }
-.pstat-val {
+.ac-play-title {
+  font-size:10px; letter-spacing:0.25em;
+  color:var(--green); font-weight:800;
+}
+.ac-play-stats {
+  display:flex; gap:20px;
+}
+.ac-play-val {
   font-family:'DM Mono',monospace;
-  font-size:13px; color:var(--text);
+  font-size:15px; font-weight:500;
+  color:var(--text); display:block;
 }
+.ac-play-key {
+  font-size:8px; letter-spacing:0.15em;
+  color:var(--muted); font-weight:800;
+  margin-top:2px; display:block;
+}
+.ac-play-claim {
+  background:var(--green-dim);
+  border:1px solid var(--green-border);
+  border-radius:8px; padding:5px 11px;
+  font-size:10px; font-weight:800;
+  color:var(--green); letter-spacing:0.1em;
+  transition:background 0.15s;
+}
+.ac-play-claim:active { background:rgba(74,222,128,0.2); }
 
-/* ════════════════════════════════════════
-   DRAWER PARRAINAGE
-════════════════════════════════════════ */
-.drawer-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.6);
-  z-index: 300;
-  opacity: 0; pointer-events: none;
-  transition: opacity 0.25s ease;
-}
-.drawer-overlay.show { opacity: 1; pointer-events: all; }
-
-.drawer {
-  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%) translateY(100%);
-  width: 100%; max-width: 430px;
-  background: var(--surface);
-  border-top: 1px solid var(--border2);
-  border-radius: 20px 20px 0 0;
-  z-index: 301;
-  transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
-  padding: 0 18px 32px;
-  max-height: 85vh;
-  overflow-y: auto;
-}
-.drawer.show { transform: translateX(-50%) translateY(0); }
-
-.drawer-handle {
-  width: 36px; height: 4px;
-  background: var(--border2);
-  border-radius: 4px;
-  margin: 12px auto 20px;
-}
-
-.drawer-title {
-  font-size: 11px; letter-spacing: 0.3em;
-  color: var(--muted); font-weight: 800;
-  margin-bottom: 18px;
-}
-
-.ref-link-box {
-  background: var(--obs-dim);
-  border: 1px solid rgba(139,109,255,0.2);
-  border-radius: 13px;
-  padding: 13px 14px;
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 12px;
-}
-.ref-link-text {
-  font-family: 'DM Mono', monospace;
-  font-size: 11px; color: var(--muted2);
-  flex: 1; overflow: hidden;
-  text-overflow: ellipsis; white-space: nowrap;
-}
-.ref-copy-btn {
-  background: var(--obs-dim);
-  border: 1px solid rgba(139,109,255,0.25);
-  border-radius: 8px; padding: 6px 12px;
-  font-size: 11px; color: var(--obs);
-  font-family: 'DM Mono', monospace;
-  font-weight: 500; flex-shrink: 0;
-  transition: background 0.15s;
-}
-
-.ref-stats-row {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 8px; margin-bottom: 12px;
-}
-.ref-stat {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 13px; padding: 13px;
-  text-align: center;
-}
-.ref-stat-val {
-  font-family: 'DM Mono', monospace;
-  font-size: 20px; font-weight: 500;
-  color: var(--obs); display: block;
-}
-.ref-stat-key {
-  font-size: 9px; letter-spacing: 0.18em;
-  color: var(--muted); font-weight: 800;
-  margin-top: 3px; display: block;
-}
-
-.share-btn {
-  width: 100%;
-  background: linear-gradient(135deg, rgba(139,109,255,0.2), rgba(139,109,255,0.08));
-  border: 1px solid rgba(139,109,255,0.3);
-  border-radius: 13px; padding: 14px;
-  font-size: 13px; font-weight: 800;
-  color: var(--obs); letter-spacing: 0.1em;
-  margin-bottom: 18px;
-  transition: background 0.15s;
-}
-.share-btn:active { background: rgba(139,109,255,0.25); }
-
-.ref-top-title {
-  font-size: 10px; letter-spacing: 0.25em;
-  color: var(--muted); font-weight: 800;
-  margin-bottom: 10px;
-}
-.ref-top-list { display: flex; flex-direction: column; gap: 7px; }
-.ref-top-item {
-  display: flex; align-items: center; gap: 10px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 11px; padding: 10px 13px;
-}
-.ref-top-rank { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); width: 18px; }
-.ref-top-name { flex: 1; font-size: 13px; font-weight: 700; }
-.ref-top-count { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--obs); }
-
-/* Bouton parrainage dans le header */
-.ref-trigger {
-  position: absolute; right: 18px; top: 50%; transform: translateY(-50%);
-  display: none; /* caché, on utilise le header existant */
-}
-
-/* ── NAV ───────────────────────────────── */
-.nav {
-  display:flex;
-  border-top:1px solid var(--border);
-  background:var(--bg);
-  flex-shrink:0;
-}
+/* ── NAV ── */
+.nav { display:flex; border-top:1px solid var(--border); background:var(--bg); flex-shrink:0; }
 .nav-btn {
   flex:1; display:flex; flex-direction:column;
   align-items:center; justify-content:center;
   gap:4px; padding:10px 0 14px;
-  color:var(--muted); transition:color 0.15s;
-  position:relative;
+  color:var(--muted); transition:color 0.15s; position:relative;
 }
 .nav-btn.active { color:var(--obs); }
 .nav-btn.active::before {
-  content:'';
-  position:absolute; top:0; left:50%;
-  transform:translateX(-50%);
-  width:22px; height:2px;
-  background:var(--obs); border-radius:0 0 2px 2px;
-  box-shadow:0 0 8px var(--obs);
+  content:''; position:absolute; top:0; left:50%; transform:translateX(-50%);
+  width:22px; height:2px; background:var(--obs);
+  border-radius:0 0 2px 2px; box-shadow:0 0 8px var(--obs);
 }
-.nav-ico  { font-size:19px; line-height:1; }
-.nav-lbl  { font-size:8px; letter-spacing:0.18em; font-weight:800; }
+.nav-ico { font-size:19px; line-height:1; }
+.nav-lbl { font-size:8px; letter-spacing:0.18em; font-weight:800; }
+
+/* ── Modal ── */
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,0.65);
+  z-index:300; opacity:0; pointer-events:none; transition:opacity 0.2s;
+}
+.modal-overlay.show { opacity:1; pointer-events:all; }
+.modal {
+  position:fixed; bottom:0; left:50%; transform:translateX(-50%) translateY(100%);
+  width:100%; max-width:430px;
+  background:var(--surface); border-top:1px solid var(--border2);
+  border-radius:20px 20px 0 0; z-index:301;
+  transition:transform 0.3s cubic-bezier(0.32,0.72,0,1);
+  padding:0 18px 32px;
+}
+.modal.show { transform:translateX(-50%) translateY(0); }
+.modal-handle { width:36px; height:4px; background:var(--border2); border-radius:4px; margin:12px auto 18px; }
+.modal-title  { font-size:11px; letter-spacing:0.3em; color:var(--muted); font-weight:800; margin-bottom:16px; }
+.modal-input {
+  width:100%; background:var(--surface2); border:1px solid var(--border2);
+  border-radius:12px; padding:13px 14px;
+  font-family:'DM Mono',monospace; font-size:14px; color:var(--text);
+  outline:none; margin-bottom:10px;
+  -webkit-user-select:text; user-select:text;
+}
+.modal-input:focus { border-color:rgba(139,109,255,0.4); }
+.modal-hint { font-size:11px; color:var(--muted2); margin-bottom:14px; line-height:1.5; }
+.modal-confirm {
+  width:100%; padding:14px; border-radius:13px;
+  font-size:13px; font-weight:800; letter-spacing:0.1em;
+  background:var(--obs-dim); border:1px solid rgba(139,109,255,0.3); color:var(--obs);
+  transition:background 0.15s;
+}
+.modal-confirm:active { background:rgba(139,109,255,0.2); }
 </style>
 </head>
 <body>
 
-<!-- Loading -->
 <div id="loading">
   <div class="loading-logo">◈</div>
   <div class="loading-text">A · L · T</div>
 </div>
 
-<!-- Toast -->
 <div id="toast"></div>
 
-<!-- Header -->
 <header class="header">
   <div class="logo">A<b>.</b>L<b>.</b>T</div>
   <div class="hdr-balance">
@@ -634,45 +449,12 @@ body::before {
     <span class="hdr-amount" id="hdr-bal">0</span>
     <span class="hdr-unit">OBS</span>
   </div>
-  <button onclick="openDrawer()" style="margin-left:10px;font-size:18px;color:var(--muted2);line-height:1;">👥</button>
 </header>
 
-<!-- Drawer parrainage -->
-<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
-<div class="drawer" id="drawer">
-  <div class="drawer-handle"></div>
-  <div class="drawer-title">PARRAINAGE</div>
-
-  <div class="ref-link-box">
-    <span class="ref-link-text" id="ref-link-text">Chargement...</span>
-    <button class="ref-copy-btn" onclick="copyRefLink()">COPIER</button>
-  </div>
-
-  <div class="ref-stats-row">
-    <div class="ref-stat">
-      <span class="ref-stat-val" id="ref-count">—</span>
-      <span class="ref-stat-key">FILLEULS</span>
-    </div>
-    <div class="ref-stat">
-      <span class="ref-stat-val" id="ref-earned">—</span>
-      <span class="ref-stat-key">OBS GAGNÉS</span>
-    </div>
-  </div>
-
-  <button class="share-btn" onclick="shareRefLink()">⬡ PARTAGER SUR TELEGRAM</button>
-
-  <div class="ref-top-title">TOP PARRAINS</div>
-  <div class="ref-top-list" id="ref-top-list">
-    <div class="lb-loading">Chargement...</div>
-  </div>
-</div>
-
-<!-- Pages -->
 <div class="pages">
 
-  <!-- HOME -->
+  <!-- ═══ HOME ═══ -->
   <div class="page active" id="page-home">
-
     <div class="combo-row">
       <span class="combo-label">COMBO</span>
       <div class="combo-track"><div class="combo-fill" id="combo-fill"></div></div>
@@ -687,6 +469,32 @@ body::before {
         <span class="tap-icon">◈</span>
         <span class="tap-lbl">TAP</span>
       </button>
+    </div>
+
+    <div class="ac-indicator hidden" id="ac-indicator">
+      <div class="ac-dot"></div>
+      <span id="ac-rate-label">AUTO · 1 OBS/S</span>
+    </div>
+
+    <!-- Machine auto-clicker sur Play -->
+    <div class="ac-play-card hidden" id="ac-play-card">
+      <div class="ac-play-header">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="ac-dot"></div>
+          <span class="ac-play-title">AUTO-CLICKER</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span id="ac-play-time" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted2)">—</span>
+          <button class="ac-play-claim" id="ac-play-claim" onclick="claimAutoClicker()">RÉCLAMER</button>
+        </div>
+      </div>
+      <div class="ac-play-stats">
+        <div><span class="ac-play-val" id="ac-play-rate">—</span><span class="ac-play-key">OBS/SEC</span></div>
+        <div><span class="ac-play-val" id="ac-play-earned">0</span><span class="ac-play-key">ACCUMULÉS</span></div>
+      </div>
+      <div class="ac-progress-track" style="margin-top:8px">
+        <div class="ac-progress-fill" id="ac-play-progress" style="width:0%"></div>
+      </div>
     </div>
 
     <div class="stats-row">
@@ -707,503 +515,548 @@ body::before {
     <div class="energy-row">
       <span class="energy-label">ÉNERGIE</span>
       <div class="energy-track"><div class="energy-fill" id="energy-fill" style="width:100%"></div></div>
-      <span class="energy-val" id="energy-val">500 / 500</span>
+      <span class="energy-val" id="energy-val">500/500</span>
+    </div>
+  </div>
+
+  <!-- ═══ WALLET ═══ -->
+  <div class="page" id="page-wallet">
+
+    <div class="wallet-resources">
+      <div class="res-card">
+        <span class="res-val" id="w-obs">—</span>
+        <span class="res-label">OBSIDIUM</span>
+      </div>
+      <div class="res-card">
+        <span class="res-val" id="w-level">—</span>
+        <span class="res-label">NIVEAU</span>
+        <span class="res-sub" id="w-rank">rang #—</span>
+      </div>
+      <div class="res-card full">
+        <span class="res-val" id="w-energy">—</span>
+        <span class="res-label">ÉNERGIE</span>
+        <div class="wallet-energy-bar">
+          <div class="w-track"><div class="w-fill" id="w-energy-fill" style="width:100%"></div></div>
+        </div>
+      </div>
+      <div class="res-card">
+        <span class="res-val" id="w-taps">—</span>
+        <span class="res-label">TAPS TOTAUX</span>
+      </div>
+      <div class="res-card">
+        <span class="res-val" id="w-combo">—</span>
+        <span class="res-label">COMBO MAX</span>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="wallet-section-title">ACTIONS</div>
+    <div class="wallet-actions">
+      <button class="wallet-action-btn btn-deposit"  onclick="openModal('deposit')">↓ RECHARGER</button>
+      <button class="wallet-action-btn btn-withdraw" onclick="openModal('withdraw-ton')">↑ RETIRER TON</button>
+      <button class="wallet-action-btn btn-transfer" onclick="openModal('transfer')">⇄ TRANSFERT</button>
+    </div>
+
+    <!-- Historique -->
+    <div class="wallet-section-title">HISTORIQUE</div>
+    <div class="history-list" id="history-list">
+      <div style="font-size:12px;color:var(--muted);text-align:center;padding:16px">Aucune transaction</div>
     </div>
 
   </div>
 
-  <!-- LEADERBOARD -->
-  <div class="page" id="page-lb">
-    <div class="page-hdr">CLASSEMENT</div>
-    <div class="lb-list" id="lb-list">
-      <div class="lb-loading">CHARGEMENT…</div>
-    </div>
-  </div>
-
-  <!-- SHOP -->
+  <!-- ═══ SHOP ═══ -->
   <div class="page" id="page-shop">
-    <div class="page-hdr">SHOP</div>
-    <div class="shop-list" id="shop-list">
-      <!-- généré dynamiquement -->
-    </div>
+    <div class="page-hdr" style="font-size:10px;letter-spacing:.35em;color:var(--muted);font-weight:800;padding:18px 18px 0">SHOP</div>
+    <div class="shop-list" id="shop-list"></div>
   </div>
 
-  <!-- PROFIL -->
+  <!-- ═══ PROFILE ═══ -->
   <div class="page" id="page-profile">
     <div class="profile-hero">
       <div class="profile-avi">◈</div>
+      <div class="level-badge" id="prof-level-badge">NIV. 1</div>
       <div class="profile-name" id="prof-name">—</div>
-      <div class="profile-sub" id="prof-sub">RANG #— · MEMBRE</div>
+      <div class="profile-sub" id="prof-sub">RANG #—</div>
     </div>
     <div class="profile-stats">
-      <div class="pstat">
-        <span class="pstat-label">OBSIDIUM TOTAL</span>
-        <span class="pstat-val" id="prof-obs">—</span>
-      </div>
-      <div class="pstat">
-        <span class="pstat-label">TAPS TOTAUX</span>
-        <span class="pstat-val" id="prof-taps">—</span>
-      </div>
-      <div class="pstat">
-        <span class="pstat-label">COMBO MAX</span>
-        <span class="pstat-val" id="prof-combo">—</span>
-      </div>
-      <div class="pstat">
-        <span class="pstat-label">MEMBRE DEPUIS</span>
-        <span class="pstat-val" id="prof-since">—</span>
-      </div>
+      <div class="pstat"><span class="pstat-label">OBSIDIUM</span><span class="pstat-val" id="prof-obs">—</span></div>
+      <div class="pstat"><span class="pstat-label">TAPS TOTAUX</span><span class="pstat-val" id="prof-taps">—</span></div>
+      <div class="pstat"><span class="pstat-label">COMBO MAX</span><span class="pstat-val" id="prof-combo">—</span></div>
+      <div class="pstat"><span class="pstat-label">ÉNERGIE</span><span class="pstat-val" id="prof-energy">—</span></div>
+      <div class="pstat"><span class="pstat-label">AUTO-CLICKER</span><span class="pstat-val" id="prof-ac">Inactif</span></div>
+      <div class="pstat"><span class="pstat-label">MEMBRE DEPUIS</span><span class="pstat-val" id="prof-since">—</span></div>
     </div>
   </div>
 
 </div>
 
-<!-- Nav -->
+<!-- NAV -->
 <nav class="nav">
   <button class="nav-btn active" data-page="home">
-    <span class="nav-ico">◈</span>
-    <span class="nav-lbl">PLAY</span>
+    <span class="nav-ico">◈</span><span class="nav-lbl">PLAY</span>
   </button>
-  <button class="nav-btn" data-page="lb">
-    <span class="nav-ico">⬡</span>
-    <span class="nav-lbl">TOP</span>
+  <button class="nav-btn" data-page="wallet">
+    <span class="nav-ico">⬡</span><span class="nav-lbl">WALLET</span>
   </button>
   <button class="nav-btn" data-page="shop">
-    <span class="nav-ico">⬟</span>
-    <span class="nav-lbl">SHOP</span>
+    <span class="nav-ico">⬟</span><span class="nav-lbl">SHOP</span>
   </button>
   <button class="nav-btn" data-page="profile">
-    <span class="nav-ico">○</span>
-    <span class="nav-lbl">PROFIL</span>
+    <span class="nav-ico">○</span><span class="nav-lbl">PROFIL</span>
   </button>
 </nav>
 
-<script>
-// ═══════════════════════════════════════════
-//  CONFIG — remplace par ton URL Cloudflare
-// ═══════════════════════════════════════════
-const API = "https://ton-tunnel.trycloudflare.com"; // ← mettre à jour à chaque redémarrage
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal()"></div>
+<div class="modal" id="modal">
+  <div class="modal-handle"></div>
+  <div class="modal-title" id="modal-title">ACTION</div>
+  <div class="modal-hint" id="modal-hint"></div>
+  <input class="modal-input" id="modal-input" type="text" placeholder="">
+  <button class="modal-confirm" id="modal-confirm" onclick="confirmModal()">CONFIRMER</button>
+</div>
 
-// ═══════════════════════════════════════════
-//  TELEGRAM INIT
-// ═══════════════════════════════════════════
+<script>
+// ═══════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════
+const API = "https://b9ae91ec25cbdd.lhr.life"; // ← mettre à jour
+
 const tg = window.Telegram?.WebApp;
-if (tg) {
-  tg.ready();
-  tg.expand();
-  tg.setHeaderColor("#09090e");
-  tg.setBackgroundColor("#09090e");
-}
+if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor("#09090e"); tg.setBackgroundColor("#09090e"); }
 
 const TG_USER = tg?.initDataUnsafe?.user || { id: 0, first_name: "Joueur", username: "joueur" };
 
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════
 //  STATE
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════
 let state = {
-  balance:    0,
-  taps:       0,
-  combo:      1,
-  comboMax:   1,
-  rank:       "—",
-  energy:     500,
-  maxEnergy:  500,
-  perTap:     1,
-  username:   TG_USER.first_name || "Joueur",
-  since:      "—",
-  // file d'attente des taps à envoyer
-  pendingTaps: 0,
-  pendingObs:  0,
-  syncTimer:   null,
-  comboTimer:  null,
+  balance: 0, taps: 0, combo: 1, comboMax: 1,
+  rank: "—", energy: 500, maxEnergy: 500,
+  level: 1, perTap: 1,
+  username: TG_USER.first_name || "Joueur",
+  since: "—",
+  autoClicker: null,
+  acEarnedSession: 0,
+  pendingTaps: 0, syncTimer: null, comboTimer: null,
 };
 
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════
 //  UTILS
-// ═══════════════════════════════════════════
-const fmt = n => n.toLocaleString('fr-FR');
+// ═══════════════════════════════════
+const fmt  = n => Number(n).toLocaleString('fr-FR');
+const api  = (path, opts={}) => fetch(API + path, { headers:{"Content-Type":"application/json"}, ...opts }).then(r => r.json());
 
-function toast(msg, type = "ok") {
+function toast(msg, type="ok") {
   const el = document.getElementById("toast");
-  el.textContent = msg;
-  el.className = `show ${type}`;
+  el.textContent = msg; el.className = `show ${type}`;
   clearTimeout(toast._t);
-  toast._t = setTimeout(() => el.className = "", 2200);
+  toast._t = setTimeout(() => el.className = "", 2400);
 }
 
-function apiFetch(path, opts = {}) {
-  return fetch(API + path, {
-    headers: { "Content-Type": "application/json" },
-    ...opts
-  }).then(r => r.json());
+function timeLeft(expiresAt) {
+  const diff = Math.max(0, new Date(expiresAt) - Date.now());
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  return h > 0 ? `${h}h${m}m` : `${m}m`;
 }
 
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════
 //  NAVIGATION
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════
 document.querySelectorAll(".nav-btn").forEach(btn => {
   btn.addEventListener("click", () => {
-    const page = btn.dataset.page;
+    const p = btn.dataset.page;
     document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
-    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    document.querySelectorAll(".page").forEach(pg => pg.classList.remove("active"));
     btn.classList.add("active");
-    document.getElementById("page-" + page).classList.add("active");
-
-    if (page === "lb")      loadLeaderboard();
-    if (page === "shop")    loadShop();
-    if (page === "profile") loadProfile();
+    document.getElementById("page-" + p).classList.add("active");
+    if (p === "wallet") loadWallet();
+    if (p === "shop")   loadShop();
+    if (p === "profile") loadProfile();
   });
 });
 
-// ═══════════════════════════════════════════
-//  RENDER UI
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════
+//  RENDER HOME
+// ═══════════════════════════════════
 function renderHome() {
-  document.getElementById("hdr-bal").textContent   = fmt(state.balance);
-  document.getElementById("combo-txt").textContent = "x" + state.combo;
-  document.getElementById("combo-fill").style.width = Math.min(state.combo * 10, 100) + "%";
+  document.getElementById("hdr-bal").textContent      = fmt(state.balance);
+  document.getElementById("combo-txt").textContent    = "x" + state.combo;
+  document.getElementById("combo-fill").style.width   = Math.min(state.combo * 10, 100) + "%";
   document.getElementById("stat-per-tap").textContent = "+" + (state.perTap * state.combo);
   document.getElementById("stat-taps").textContent    = fmt(state.taps);
   document.getElementById("stat-rank").textContent    = "#" + state.rank;
-
   const ePct = (state.energy / state.maxEnergy * 100).toFixed(0);
   document.getElementById("energy-fill").style.width = ePct + "%";
-  document.getElementById("energy-val").textContent  = state.energy + " / " + state.maxEnergy;
+  document.getElementById("energy-val").textContent  = state.energy + "/" + state.maxEnergy;
+
+  // Auto-clicker card sur Play
+  const acCard = document.getElementById("ac-play-card");
+  if (state.autoClicker) {
+    acCard.classList.remove("hidden");
+    document.getElementById("ac-play-rate").textContent   = state.autoClicker.obs_per_sec;
+    document.getElementById("ac-play-earned").textContent = fmt(Math.floor(state.acEarnedSession));
+    document.getElementById("ac-play-time").textContent   = timeLeft(state.autoClicker.expires_at);
+    const total = 24 * 3600 * 1000;
+    const used  = Date.now() - new Date(state.autoClicker.started_at);
+    document.getElementById("ac-play-progress").style.width = Math.min(used / total * 100, 100) + "%";
+  } else {
+    acCard.classList.add("hidden");
+  }
 }
 
-// ═══════════════════════════════════════════
-//  INIT — register + load user
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════
+//  INIT
+// ═══════════════════════════════════
 async function init() {
   try {
-    // Inscription (ignore si déjà existant)
-    await apiFetch("/register", {
+    await api("/register", {
       method: "POST",
-      body: JSON.stringify({
-        telegram_id: TG_USER.id,
-        username: TG_USER.username || TG_USER.first_name
-      })
+      body: JSON.stringify({ telegram_id: TG_USER.id, username: TG_USER.username || TG_USER.first_name })
     });
-
-    // Charger le profil
-    const data = await apiFetch("/user/" + TG_USER.id);
-    state.balance  = data.obsidium;
-    state.taps     = data.total_taps;
-    state.comboMax = data.combo_max;
-    state.rank     = data.rank;
-    state.username = data.username;
-    state.since    = data.created_at
+    const data = await api("/user/" + TG_USER.id);
+    state.balance     = data.obsidium;
+    state.taps        = data.total_taps;
+    state.comboMax    = data.combo_max;
+    state.rank        = data.rank;
+    state.level       = data.level;
+    state.energy      = data.energy;
+    state.maxEnergy   = data.energy_max;
+    state.username    = data.username;
+    state.autoClicker = data.auto_clicker;
+    state.since = data.created_at
       ? new Date(data.created_at).toLocaleDateString('fr-FR', { month:'short', year:'numeric' })
       : "—";
-
     renderHome();
-  } catch(e) {
-    console.warn("API non disponible, mode hors-ligne");
-  }
+  } catch(e) { console.warn("Mode hors-ligne"); }
 
-  // Masquer le loading
-  const loading = document.getElementById("loading");
-  loading.classList.add("hidden");
-  setTimeout(() => loading.remove(), 500);
+  document.getElementById("loading").classList.add("hidden");
+  setTimeout(() => document.getElementById("loading")?.remove(), 500);
 }
 
-// ═══════════════════════════════════════════
-//  TAP LOGIC
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════
+//  TAP
+// ═══════════════════════════════════
 const tapBtn  = document.getElementById("tap-btn");
 const tapZone = document.getElementById("tap-zone");
 const comboEl = document.getElementById("combo-txt");
 
 tapBtn.addEventListener("click", handleTap);
-tapBtn.addEventListener("touchstart", e => { e.preventDefault(); handleTap(e.touches[0]); }, { passive: false });
+tapBtn.addEventListener("touchstart", e => { e.preventDefault(); handleTap(e.touches[0]); }, { passive:false });
 
 function handleTap(e) {
-  if (state.energy <= 0) {
-    toast("⚡ Énergie épuisée !", "err");
-    return;
-  }
+  if (state.energy <= 0) { toast("⚡ Énergie épuisée !", "err"); return; }
 
-  // Mettre à jour le state local
   const earned = state.perTap * state.combo;
   state.balance += earned;
   state.taps    += 1;
-  state.energy  = Math.max(0, state.energy - 1);
-  state.combo   = Math.min(state.combo + 1, 10);
+  state.energy   = Math.max(0, state.energy - 1);
+  state.combo    = Math.min(state.combo + 1, 10);
   state.comboMax = Math.max(state.comboMax, state.combo);
-
-  // File d'attente pour sync API (par batch)
   state.pendingTaps += 1;
-  state.pendingObs  += earned;
   scheduleSyncTaps();
 
-  // Reset combo timer
   clearTimeout(state.comboTimer);
-  state.comboTimer = setTimeout(() => {
-    state.combo = 1;
-    renderHome();
-  }, 2000);
+  state.comboTimer = setTimeout(() => { state.combo = 1; renderHome(); }, 2000);
 
-  // Animation combo bump
   comboEl.classList.add("bump");
   setTimeout(() => comboEl.classList.remove("bump"), 120);
-
-  // Float +N
   spawnFloat(e, "+" + earned);
-
-  // Vibration légère
   if (navigator.vibrate) navigator.vibrate(8);
-
   renderHome();
 }
 
 function spawnFloat(e, text) {
   const el = document.createElement("div");
-  el.className = "float";
-  el.textContent = text;
+  el.className = "float"; el.textContent = text;
   const rect = tapZone.getBoundingClientRect();
-  const clientX = e.clientX ?? e.touches?.[0]?.clientX ?? rect.left + rect.width/2;
-  const clientY = e.clientY ?? e.touches?.[0]?.clientY ?? rect.top  + rect.height/2;
-  el.style.left = (clientX - rect.left - 16 + (Math.random()*30-15)) + "px";
-  el.style.top  = (clientY - rect.top  - 16) + "px";
+  const cx = e.clientX ?? rect.left + rect.width/2;
+  const cy = e.clientY ?? rect.top + rect.height/2;
+  el.style.left = (cx - rect.left - 16 + (Math.random()*30-15)) + "px";
+  el.style.top  = (cy - rect.top  - 16) + "px";
   tapZone.appendChild(el);
   el.addEventListener("animationend", () => el.remove());
 }
 
-// Sync taps vers API par batch (toutes les 800ms)
 function scheduleSyncTaps() {
   if (state.syncTimer) return;
   state.syncTimer = setTimeout(syncTaps, 800);
 }
 
 async function syncTaps() {
-  if (state.pendingTaps === 0) { state.syncTimer = null; return; }
-
-  const taps  = state.pendingTaps;
-  const combo = state.combo;
-  state.pendingTaps = 0;
-  state.pendingObs  = 0;
-  state.syncTimer   = null;
-
+  if (!state.pendingTaps) { state.syncTimer = null; return; }
+  const taps = state.pendingTaps; state.pendingTaps = 0; state.syncTimer = null;
   try {
-    const res = await apiFetch("/tap", {
-      method: "POST",
-      body: JSON.stringify({ telegram_id: TG_USER.id, taps, combo })
-    });
-    if (res.ok) {
-      // Sync le vrai solde serveur
-      state.balance = res.balance;
-      state.rank    = res.rank || state.rank;
-      renderHome();
-    }
-  } catch(e) {
-    console.warn("Sync tap échouée (mode hors-ligne)");
-  }
+    const res = await api("/tap", { method:"POST", body:JSON.stringify({ telegram_id:TG_USER.id, taps, combo:state.combo }) });
+    if (res.ok) { state.balance = res.balance; state.level = res.level || state.level; renderHome(); }
+  } catch(e) {}
 }
 
-// Régénération énergie : +1 toutes les 2s
+// Énergie regen
 setInterval(() => {
   if (state.energy < state.maxEnergy) {
     state.energy = Math.min(state.energy + 1, state.maxEnergy);
-    if (document.getElementById("page-home").classList.contains("active")) {
-      document.getElementById("energy-fill").style.width = (state.energy / state.maxEnergy * 100) + "%";
-      document.getElementById("energy-val").textContent  = state.energy + " / " + state.maxEnergy;
-    }
+    if (document.getElementById("page-home").classList.contains("active")) renderHome();
   }
 }, 2000);
 
-// ═══════════════════════════════════════════
-//  LEADERBOARD
-// ═══════════════════════════════════════════
-async function loadLeaderboard() {
-  const list = document.getElementById("lb-list");
-  list.innerHTML = '<div class="lb-loading">CHARGEMENT…</div>';
-
-  try {
-    const res = await apiFetch("/leaderboard");
-    if (!res.ok || !res.leaders.length) {
-      list.innerHTML = '<div class="lb-loading">Aucun joueur.</div>';
-      return;
-    }
-
-    const medals = { 0: ["g","👑"], 1: ["s","⬡"], 2: ["b","⬟"] };
-    const myId = TG_USER.id;
-
-    list.innerHTML = res.leaders.map((p, i) => {
-      const [cls, ico] = medals[i] || ["", i+1];
-      const isMe = p.telegram_id === myId;
-      return `
-        <div class="lb-item${isMe ? " me" : ""}">
-          <span class="lb-rank ${cls}">${typeof ico === "string" ? ico : i+1}</span>
-          <div class="lb-avi">${isMe ? "◈" : "○"}</div>
-          <span class="lb-name">${p.username}${isMe ? '<span class="lb-you">VOUS</span>' : ""}</span>
-          <span class="lb-score">${fmt(p.obsidium)} OBS</span>
-        </div>`;
-    }).join("");
-
-  } catch(e) {
-    list.innerHTML = '<div class="lb-loading">Erreur de connexion.</div>';
+// Auto-clicker passive accumulation display
+setInterval(() => {
+  if (state.autoClicker) {
+    state.acEarnedSession += state.autoClicker.obs_per_sec;
+    state.balance += state.autoClicker.obs_per_sec;
+    document.getElementById("hdr-bal").textContent = fmt(Math.floor(state.balance));
+    document.getElementById("ac-play-earned").textContent = fmt(Math.floor(state.acEarnedSession));
+    document.getElementById("ac-play-time").textContent   = timeLeft(state.autoClicker.expires_at);
   }
-}
+}, 1000);
 
-// ═══════════════════════════════════════════
-//  SHOP
-// ═══════════════════════════════════════════
-async function loadShop() {
-  const list = document.getElementById("shop-list");
-  if (list.children.length > 0) return; // déjà chargé
-
+// ═══════════════════════════════════
+//  WALLET
+// ═══════════════════════════════════
+async function loadWallet() {
   try {
-    const res = await apiFetch("/shop");
+    const res = await api("/wallet/" + TG_USER.id);
     if (!res.ok) return;
 
-    const icons  = { boost_x2:"⚡", combo_shield:"🔮", add_10000_obs:"💎", multiplier_x5:"🌑" };
-    const isTon  = item => item.price_ton !== null;
+    document.getElementById("w-obs").textContent    = fmt(res.obsidium) + " OBS";
+    document.getElementById("w-level").textContent  = res.level;
+    document.getElementById("w-rank").textContent   = "rang #" + res.rank;
+    document.getElementById("w-taps").textContent   = fmt(res.total_taps);
+    document.getElementById("w-combo").textContent  = "x" + res.combo_max;
+    document.getElementById("w-energy").textContent = res.energy + " / " + res.energy_max;
+    document.getElementById("w-energy-fill").style.width = (res.energy / res.energy_max * 100) + "%";
 
-    list.innerHTML = res.items.map(item => `
-      <div class="shop-item">
-        <div class="shop-ico${isTon(item) ? " gold-ico" : ""}">${icons[item.effect] || "◈"}</div>
-        <div class="shop-info">
-          <div class="shop-name">${item.name}</div>
-          <div class="shop-desc">${item.description}</div>
-        </div>
-        ${isTon(item)
-          ? `<button class="buy-btn buy-ton" onclick="buyTon(${item.id}, ${item.price_ton})">${(item.price_ton/1e9).toFixed(1)} TON</button>`
-          : `<button class="buy-btn buy-obs" onclick="buyObs(${item.id}, ${item.price_obs})">${fmt(item.price_obs)} OBS</button>`
-        }
-      </div>`).join("");
+    // Auto-clicker
+    const ac = res.auto_clicker;
+    state.autoClicker = ac;
+    const badge   = document.getElementById("ac-badge");
+    const claimBtn = document.getElementById("ac-claim-btn");
 
-  } catch(e) {
-    list.innerHTML = '<div class="lb-loading">Erreur de connexion.</div>';
-  }
+    if (ac) {
+      badge.textContent = "ACTIF";
+      badge.className   = "ac-status-badge active";
+      document.getElementById("ac-rate").textContent        = ac.obs_per_sec;
+      document.getElementById("ac-time-left").textContent   = timeLeft(ac.expires_at);
+      document.getElementById("ac-earned-today").textContent = fmt(Math.floor(state.acEarnedSession));
+
+      const total = 24 * 3600 * 1000;
+      const used  = Date.now() - new Date(ac.started_at);
+      document.getElementById("ac-progress").style.width = Math.min(used / total * 100, 100) + "%";
+      claimBtn.disabled = false;
+    } else {
+      badge.textContent = "INACTIF"; badge.className = "ac-status-badge inactive";
+      document.getElementById("ac-rate").textContent      = "—";
+      document.getElementById("ac-time-left").textContent = "—";
+      claimBtn.disabled = true;
+    }
+
+    // Historique
+    const hist = res.history || [];
+    const hList = document.getElementById("history-list");
+    if (!hist.length) {
+      hList.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:16px">Aucune transaction</div>';
+    } else {
+      const icons = { ton:"◈", obs:"◈" };
+      hList.innerHTML = hist.map(h => `
+        <div class="history-item">
+          <span class="history-ico">${icons[h.type] || "◈"}</span>
+          <div class="history-info">
+            <div class="history-type">${h.type === "ton" ? "Retrait TON" : "Transfert OBS"}</div>
+            <div class="history-date">${new Date(h.created_at).toLocaleDateString('fr-FR')}</div>
+          </div>
+          <span class="history-amount out">-${fmt(h.amount)}</span>
+        </div>`).join("");
+    }
+  } catch(e) { console.warn("Wallet error", e); }
+}
+
+async function claimAutoClicker() {
+  try {
+    const res = await api("/autoclicker/claim", { method:"POST", body:JSON.stringify({ telegram_id:TG_USER.id }) });
+    if (res.ok) {
+      state.balance = res.balance;
+      state.acEarnedSession = 0;
+      renderHome();
+      loadWallet();
+      toast("✓ +" + fmt(res.earned) + " OBS réclamés !", "ok");
+    }
+  } catch(e) { toast("❌ Erreur de connexion", "err"); }
+}
+
+// ═══════════════════════════════════
+//  SHOP
+// ═══════════════════════════════════
+async function loadShop() {
+  const list = document.getElementById("shop-list");
+  if (list.children.length) return;
+
+  try {
+    const res = await api("/shop");
+    if (!res.ok) return;
+
+    const icons = { boost_x2:"×2", combo_shield:"◉", add_10000_obs:"◈", multiplier_x5:"×5", auto_clicker:"⚙" };
+    const icoClass = { auto_clicker:"green-ico", add_10000_obs:"gold-ico", multiplier_x5:"gold-ico" };
+
+    // Auto-clicker en premier
+    const sorted = [...res.items].sort((a, b) => {
+      if (a.effect === "auto_clicker") return -1;
+      if (b.effect === "auto_clicker") return 1;
+      return 0;
+    });
+
+    list.innerHTML = sorted.map(item => {
+      const cls  = icoClass[item.effect] || "";
+      let btns   = "";
+      if (item.price_obs)   btns += `<button class="buy-btn buy-obs"   onclick="buyObs(${item.id},${item.price_obs})">${fmt(item.price_obs)} OBS</button>`;
+      if (item.price_ton)   btns += `<button class="buy-btn buy-ton"   onclick="buyTon(${item.price_ton})">${(item.price_ton/1e9).toFixed(1)} TON</button>`;
+      if (item.price_stars) btns += `<button class="buy-btn buy-stars" onclick="buyStars(${item.id},${item.price_stars})">★ ${item.price_stars}</button>`;
+      return `
+        <div class="shop-item">
+          <div class="shop-ico ${cls}">${icons[item.effect] || "◈"}</div>
+          <div class="shop-info">
+            <div class="shop-name">${item.name}</div>
+            <div class="shop-desc">${item.description}</div>
+          </div>
+          <div class="shop-btns">${btns}</div>
+        </div>`;
+    }).join("");
+  } catch(e) {}
 }
 
 async function buyObs(itemId, price) {
-  if (state.balance < price) {
-    toast("❌ Solde OBS insuffisant", "err");
-    return;
-  }
+  if (state.balance < price) { toast("❌ Solde OBS insuffisant", "err"); return; }
   try {
-    const res = await apiFetch("/buy", {
-      method: "POST",
-      body: JSON.stringify({ telegram_id: TG_USER.id, item_id: itemId })
-    });
+    const res = await api("/buy", { method:"POST", body:JSON.stringify({ telegram_id:TG_USER.id, item_id:itemId }) });
     if (res.ok) {
       state.balance = res.balance;
-      renderHome();
-      document.getElementById("hdr-bal").textContent = fmt(state.balance);
-      toast("✓ Boost activé : " + res.item, "ok");
-    } else {
-      toast("❌ " + (res.detail || "Erreur"), "err");
-    }
-  } catch(e) {
-    toast("❌ Erreur de connexion", "err");
-  }
+      if (res.effect === "auto_clicker") {
+        state.autoClicker = { obs_per_sec: res.obs_per_sec, expires_at: res.expires_at, started_at: new Date().toISOString() };
+      }
+      renderHome(); toast("✓ " + res.item + " activé !", "ok");
+    } else { toast("❌ " + (res.detail || "Erreur"), "err"); }
+  } catch(e) { toast("❌ Erreur de connexion", "err"); }
 }
 
-async function buyTon(itemId, amountNano) {
-  // Générer le lien de paiement TON via l'API
-  const link = `${API}/ton/link?amount=${amountNano}&user=${TG_USER.id}`;
-  // Ouvrir le wallet TON dans Telegram
+function buyTon(amountNano) {
+  const link = ton_link(amountNano);
   tg?.openLink?.(link) || window.open(link, "_blank");
   toast("💎 Ouverture du wallet TON…", "ok");
 }
 
-// ═══════════════════════════════════════════
-//  PROFIL
-// ═══════════════════════════════════════════
+async function buyStars(itemId, stars) {
+  toast("⭐ Paiement Stars en cours…", "ok");
+  // Le paiement Stars est géré par le bot Telegram
+  tg?.close?.();
+}
+
+function ton_link(nano) {
+  return `ton://transfer/TON_WALLET_ADDRESS?amount=${nano}&text=ALT`;
+}
+
+// ═══════════════════════════════════
+//  PROFILE
+// ═══════════════════════════════════
 async function loadProfile() {
   try {
-    const data = await apiFetch("/user/" + TG_USER.id);
-    document.getElementById("prof-name").textContent  = data.username;
-    document.getElementById("prof-sub").textContent   = `RANG #${data.rank} · MEMBRE`;
-    document.getElementById("prof-obs").textContent   = fmt(data.obsidium) + " OBS";
-    document.getElementById("prof-taps").textContent  = fmt(data.total_taps);
-    document.getElementById("prof-combo").textContent = "x" + data.combo_max;
-    document.getElementById("prof-since").textContent = data.created_at
+    const data = await api("/user/" + TG_USER.id);
+    const ac   = data.auto_clicker;
+    document.getElementById("prof-name").textContent         = data.username;
+    document.getElementById("prof-sub").textContent          = "RANG #" + data.rank;
+    document.getElementById("prof-level-badge").textContent  = "NIV. " + data.level;
+    document.getElementById("prof-obs").textContent          = fmt(data.obsidium) + " OBS";
+    document.getElementById("prof-taps").textContent         = fmt(data.total_taps);
+    document.getElementById("prof-combo").textContent        = "x" + data.combo_max;
+    document.getElementById("prof-energy").textContent       = data.energy + " / " + data.energy_max;
+    document.getElementById("prof-ac").textContent           = ac ? "Actif · " + ac.obs_per_sec + " OBS/s" : "Inactif";
+    document.getElementById("prof-since").textContent        = data.created_at
       ? new Date(data.created_at).toLocaleDateString('fr-FR', { month:'long', year:'numeric' })
       : "—";
-  } catch(e) {
-    console.warn("Profil non chargé");
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════
+//  MODAL (Deposit / Withdraw / Transfer)
+// ═══════════════════════════════════
+let currentModal = null;
+
+function openModal(type) {
+  currentModal = type;
+  const title = document.getElementById("modal-title");
+  const hint  = document.getElementById("modal-hint");
+  const input = document.getElementById("modal-input");
+
+  if (type === "deposit") {
+    title.textContent       = "RECHARGER";
+    hint.textContent        = "Choisis un montant TON à déposer pour obtenir des OBS.";
+    input.placeholder       = "Montant TON (ex: 0.5)";
+    input.type              = "number";
+  } else if (type === "withdraw-ton") {
+    title.textContent       = "RETIRER EN TON";
+    hint.textContent        = "Minimum 10 000 OBS requis. Entre le nombre d'OBS à convertir.";
+    input.placeholder       = "Montant OBS à retirer";
+    input.type              = "number";
+  } else if (type === "transfer") {
+    title.textContent       = "TRANSFERT OBS";
+    hint.textContent        = "Entre l'ID Telegram du destinataire puis le montant (ex: 123456789:500)";
+    input.placeholder       = "ID:montant";
+    input.type              = "text";
+  }
+
+  input.value = "";
+  document.getElementById("modal-overlay").classList.add("show");
+  document.getElementById("modal").classList.add("show");
+  setTimeout(() => input.focus(), 350);
+}
+
+function closeModal() {
+  document.getElementById("modal-overlay").classList.remove("show");
+  document.getElementById("modal").classList.remove("show");
+  currentModal = null;
+}
+
+async function confirmModal() {
+  const input = document.getElementById("modal-input").value.trim();
+  if (!input) return;
+
+  if (currentModal === "deposit") {
+    const nano = Math.round(parseFloat(input) * 1e9);
+    if (isNaN(nano) || nano <= 0) { toast("❌ Montant invalide", "err"); return; }
+    buyTon(nano);
+    closeModal();
+
+  } else if (currentModal === "withdraw-ton") {
+    const amount = parseInt(input);
+    if (isNaN(amount) || amount <= 0) { toast("❌ Montant invalide", "err"); return; }
+    try {
+      const res = await api("/wallet/withdraw", {
+        method: "POST",
+        body: JSON.stringify({ telegram_id:TG_USER.id, type:"ton", amount, destination:"" })
+      });
+      if (res.ok) { state.balance = res.balance; renderHome(); loadWallet(); toast("✓ Retrait demandé !", "ok"); closeModal(); }
+      else { toast("❌ " + (res.detail || "Erreur"), "err"); }
+    } catch(e) { toast("❌ Erreur de connexion", "err"); }
+
+  } else if (currentModal === "transfer") {
+    const parts = input.split(":");
+    if (parts.length !== 2) { toast("❌ Format: ID:montant", "err"); return; }
+    const [dest, amount] = [parts[0].trim(), parseInt(parts[1].trim())];
+    try {
+      const res = await api("/wallet/withdraw", {
+        method: "POST",
+        body: JSON.stringify({ telegram_id:TG_USER.id, type:"obs", amount, destination:dest })
+      });
+      if (res.ok) { state.balance = res.balance; renderHome(); loadWallet(); toast("✓ Transfert effectué !", "ok"); closeModal(); }
+      else { toast("❌ " + (res.detail || "Erreur"), "err"); }
+    } catch(e) { toast("❌ Erreur de connexion", "err"); }
   }
 }
 
-// ═══════════════════════════════════════════
-//  DRAWER PARRAINAGE
-// ═══════════════════════════════════════════
-let refLink = "";
-let drawerLoaded = false;
-
-function openDrawer() {
-  document.getElementById("drawer-overlay").classList.add("show");
-  document.getElementById("drawer").classList.add("show");
-  if (!drawerLoaded) loadReferralStats();
-}
-
-function closeDrawer() {
-  document.getElementById("drawer-overlay").classList.remove("show");
-  document.getElementById("drawer").classList.remove("show");
-}
-
-async function loadReferralStats() {
-  drawerLoaded = true;
-
-  // Construire le lien de parrainage
-  const botUsername = "FLAW_PORTOR"; // ← remplace par ton @username du bot
-  refLink = `https://t.me/${botUsername}?start=ref_${TG_USER.id}`;
-  document.getElementById("ref-link-text").textContent = refLink;
-
-  try {
-    const res = await apiFetch("/referral/stats/" + TG_USER.id);
-    if (res.ok) {
-      document.getElementById("ref-count").textContent  = res.count;
-      document.getElementById("ref-earned").textContent = fmt(res.obs_earned);
-
-      const medals = ["🥇","🥈","🥉","4.","5."];
-      const list = document.getElementById("ref-top-list");
-
-      if (!res.top_referrers.length) {
-        list.innerHTML = '<div class="lb-loading">Aucun parrain pour l\'instant.</div>';
-        return;
-      }
-
-      list.innerHTML = res.top_referrers.map((r, i) => `
-        <div class="ref-top-item">
-          <span class="ref-top-rank">${medals[i]}</span>
-          <span class="ref-top-name">${r.username}</span>
-          <span class="ref-top-count">${r.total} filleul${r.total > 1 ? "s" : ""}</span>
-        </div>`).join("");
-    }
-  } catch(e) {
-    document.getElementById("ref-count").textContent  = "—";
-    document.getElementById("ref-earned").textContent = "—";
-  }
-}
-
-function copyRefLink() {
-  if (!refLink) return;
-  navigator.clipboard?.writeText(refLink).then(() => {
-    toast("✓ Lien copié !", "ok");
-  }).catch(() => {
-    // Fallback pour Telegram WebApp
-    const el = document.createElement("textarea");
-    el.value = refLink;
-    document.body.appendChild(el);
-    el.select();
-    document.execCommand("copy");
-    el.remove();
-    toast("✓ Lien copié !", "ok");
-  });
-}
-
-function shareRefLink() {
-  if (!refLink) return;
-  const msg = encodeURIComponent(`🎮 Rejoins-moi sur A.L.T et gagne 200 OBS de bonus !\n${refLink}`);
-  tg?.openTelegramLink?.(`https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${msg}`)
-    || window.open(`https://t.me/share/url?url=${encodeURIComponent(refLink)}`, "_blank");
-}
-
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════
 //  START
-// ═══════════════════════════════════════════
+// ═══════════════════════════════════
 init();
 </script>
 </body>
